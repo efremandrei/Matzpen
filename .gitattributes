@@ -1,0 +1,5 @@
+app/src/main/assets/content.json -text
+docs/feed/content.json -text
+docs/feed/manifest.json -text
+docs/feed/manifest.sig binary
+gradle/wrapper/gradle-wrapper.jar binary
