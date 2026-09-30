@@ -13,7 +13,7 @@ import java.security.spec.X509EncodedKeySpec
 import java.util.Base64
 
 class ContentStore(private val context: Context) {
-    private val baseUrl = "https://efremandrei.github.io/matzpen/feed/"
+    private val baseUrl = "https://efremandrei.github.io/Matzpen/feed/"
     private val publicKey = "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEhCLTBqk7FckXLKJ+8f3F7Tzm5kDqcVwV61xsoie+1XrGNHkQ3QfnNuG/vSogPNoXIMSmUt49B4t0JGepnvHbCg=="
     private val cacheDir = File(context.filesDir, "signed-feed")
 
