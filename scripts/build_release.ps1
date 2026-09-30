@@ -39,8 +39,12 @@ try {
     if ($LASTEXITCODE -ne 0) { throw 'APK signature verification failed' }
     $dist = Join-Path $projectRoot 'dist'
     New-Item -ItemType Directory -Path $dist -Force | Out-Null
-    Copy-Item -LiteralPath $apk -Destination (Join-Path $dist 'Matzpen-v1.0.0.apk') -Force
-    Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $dist 'Matzpen-v1.0.0.apk') | Select-Object Path,Hash
+    $gradle = Get-Content -LiteralPath (Join-Path $projectRoot 'app\build.gradle') -Raw
+    $versionMatch = [regex]::Match($gradle, "versionName\s+'([^']+)'")
+    if (-not $versionMatch.Success) { throw 'Could not determine versionName' }
+    $destination = Join-Path $dist ("Matzpen-v{0}.apk" -f $versionMatch.Groups[1].Value)
+    Copy-Item -LiteralPath $apk -Destination $destination -Force
+    Get-FileHash -Algorithm SHA256 -LiteralPath $destination | Select-Object Path,Hash
 } finally {
     Remove-Item Env:MATZPEN_KEYSTORE,Env:MATZPEN_STORE_PASSWORD,Env:MATZPEN_KEY_PASSWORD -ErrorAction SilentlyContinue
     $password = $null

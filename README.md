@@ -10,6 +10,9 @@ An Android voter guide for Israel's 26th Knesset election. It compares a voter's
 - Keeps answers on the device. There is no account, analytics, or answer upload.
 - Loads a bundled election snapshot offline and accepts only newer, correctly signed public feed revisions.
 - Defaults to dark mode while preserving the user's language and theme choices.
+- Provides a question index, saved progress, searchable list browsing, compact ranked and unranked results, and a source-backed comparison of each answer.
+
+The [design overview](DESIGN_OVERVIEW.md) documents the visual direction and UX principles behind the 1.1 redesign.
 
 ## Data provenance
 
@@ -39,4 +42,4 @@ GitHub Pages serves `docs/feed/manifest.json`, `manifest.sig`, and `content.json
 
 ## Project status
 
-Version 1.0.0 is a source-backed pre-election preview. The initial build was installed and visually checked on an Android 35 emulator in Hebrew, Arabic, and English, including dark and light themes. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
+Version 1.1.0 is a source-backed pre-election preview. The redesigned build has been installed and visually checked on an Android 35 emulator. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.

@@ -1,6 +1,7 @@
 package com.efremandrei.matzpen
 
 import android.app.Activity
+import android.app.AlertDialog
 import android.content.Intent
 import android.graphics.Color
 import android.graphics.Typeface
@@ -8,16 +9,24 @@ import android.graphics.drawable.GradientDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.text.BidiFormatter
+import android.text.Editable
+import android.text.TextWatcher
 import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.CheckBox
+import android.widget.EditText
+import android.widget.ImageView
 import android.widget.LinearLayout
+import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
+import android.widget.Toast
 import org.json.JSONObject
+import kotlin.math.abs
 import kotlin.math.roundToInt
 
 class MainActivity : Activity() {
@@ -30,20 +39,29 @@ class MainActivity : Activity() {
     private var screen = "home"
     private var questionIndex = 0
     private var selectedList: String? = null
+    private var detailReturn = "results"
+    private var detailFilter = "all"
+    private var showAllRanked = false
+    private var showUnranked = false
+    private var listFilter = "all"
     private lateinit var root: LinearLayout
     private lateinit var body: LinearLayout
+    private lateinit var scroll: ScrollView
 
-    private val navy get() = if (dark) Color.rgb(12, 20, 35) else Color.rgb(246, 249, 252)
-    private val surface get() = if (dark) Color.rgb(25, 37, 55) else Color.WHITE
-    private val foreground get() = if (dark) Color.rgb(238, 245, 250) else Color.rgb(25, 37, 55)
-    private val muted get() = if (dark) Color.rgb(166, 186, 203) else Color.rgb(83, 104, 121)
-    private val accent = Color.rgb(25, 171, 154)
-    private val amber = Color.rgb(239, 172, 79)
+    private val navy get() = if (dark) Color.rgb(11, 20, 36) else Color.rgb(245, 247, 248)
+    private val surface get() = if (dark) Color.rgb(23, 38, 58) else Color.WHITE
+    private val foreground get() = if (dark) Color.rgb(243, 247, 250) else Color.rgb(23, 36, 53)
+    private val muted get() = if (dark) Color.rgb(185, 201, 214) else Color.rgb(82, 98, 115)
+    private val accent get() = if (dark) Color.rgb(82, 219, 198) else Color.rgb(8, 124, 114)
+    private val border get() = if (dark) Color.rgb(43, 64, 83) else Color.rgb(226, 232, 236)
+    private val amber get() = if (dark) Color.rgb(247, 186, 106) else Color.rgb(134, 84, 0)
+    private val mint = Color.rgb(45, 211, 186)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lang = prefs.getString("language", "he") ?: "he"
         dark = prefs.getBoolean("dark", true)
+        questionIndex = prefs.getInt("question_index", 0)
         val saved = JSONObject(prefs.getString("answers", "{}") ?: "{}")
         saved.keys().forEach { id ->
             val answer = saved.optJSONObject(id) ?: return@forEach
@@ -51,17 +69,27 @@ class MainActivity : Activity() {
             if (value in -2..2) answers[id] = VoterAnswer(value, answer.optBoolean("priority"))
         }
         data = store.load()
+        questionIndex = questionIndex.coerceIn(0, data.questions.lastIndex)
         show("home")
         Thread {
             try {
                 val updated = store.refresh(data.revision)
-                if (updated != null) runOnUiThread { data = updated; show(screen) }
+                if (updated != null) runOnUiThread { data = updated; show(screen, true) }
             } catch (_: Exception) { /* Valid bundled or cached data stays available offline. */ }
         }.start()
     }
 
     private fun tr(en: String, he: String, ar: String) = when (lang) { "he" -> he; "ar" -> ar; else -> en }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).roundToInt()
+    private fun answeredCount() = data.questions.count { answers.containsKey(it.id) }
+    private fun priorityCount() = data.questions.count { answers[it.id]?.priority == true }
+    private fun percent(value: Double) = wrapped("${(value * 100).roundToInt()}%")
+    private fun wrapped(value: String) = BidiFormatter.getInstance(lang != "en").unicodeWrap(value)
+    private fun goToQuestion(index: Int) {
+        questionIndex = index.coerceIn(0, data.questions.lastIndex)
+        prefs.edit().putInt("question_index", questionIndex).apply()
+        show("question")
+    }
     private fun saveAnswers() {
         val objectValue = JSONObject()
         answers.forEach { (id, answer) -> objectValue.put(id, JSONObject().put("value", answer.value).put("priority", answer.priority)) }
@@ -69,7 +97,7 @@ class MainActivity : Activity() {
     }
 
     private fun box(color: Int, radius: Int = 18): GradientDrawable = GradientDrawable().apply {
-        setColor(color); cornerRadius = dp(radius).toFloat()
+        setColor(color); cornerRadius = dp(radius).toFloat(); setStroke(dp(1), border)
     }
 
     private fun text(value: String, size: Float = 16f, color: Int = foreground, bold: Boolean = false): TextView = TextView(this).apply {
@@ -77,8 +105,10 @@ class MainActivity : Activity() {
         textSize = size
         setTextColor(color)
         if (bold) typeface = Typeface.create("sans-serif", Typeface.BOLD)
-        gravity = if (lang == "en") Gravity.START else Gravity.END
-        textDirection = if (lang == "en") View.TEXT_DIRECTION_LTR else View.TEXT_DIRECTION_RTL
+        gravity = Gravity.START
+        textAlignment = View.TEXT_ALIGNMENT_VIEW_START
+        textDirection = View.TEXT_DIRECTION_FIRST_STRONG
+        setLineSpacing(dp(2).toFloat(), 1f)
     }
 
     private fun addText(parent: LinearLayout, value: String, size: Float = 16f, color: Int = foreground, bold: Boolean = false, top: Int = 0): TextView {
@@ -91,8 +121,11 @@ class MainActivity : Activity() {
         text = label
         isAllCaps = false
         textSize = 15f
-        setTextColor(if (primary) Color.rgb(8, 28, 33) else this@MainActivity.foreground)
-        background = box(if (primary) Color.rgb(57, 216, 188) else surface, 14)
+        setTextColor(if (primary) Color.rgb(11, 20, 36) else this@MainActivity.foreground)
+        background = box(if (primary) mint else surface, 14)
+        stateListAnimator = null
+        elevation = 0f
+        minHeight = dp(52)
         setPadding(dp(12), dp(10), dp(12), dp(10))
         setOnClickListener { onClick() }
     }
@@ -101,23 +134,28 @@ class MainActivity : Activity() {
         parent.addView(button(label, primary, onClick), LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(top) })
     }
 
-    private fun card(parent: LinearLayout, content: (LinearLayout) -> Unit) {
+    private fun card(parent: LinearLayout, content: (LinearLayout) -> Unit): LinearLayout {
         val view = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
-            background = box(surface)
+            background = box(surface, 22)
             setPadding(dp(17), dp(16), dp(17), dp(16))
         }
         parent.addView(view, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(12) })
         content(view)
+        return view
     }
 
     private fun link(parent: LinearLayout, title: String, url: String) {
         if (!url.startsWith("https://")) return
-        val view = addText(parent, title + " ↗", 13f, Color.rgb(62, 211, 190), top = 8)
+        val view = addText(parent, title + " ↗", 14f, accent, true, top = 8)
+        view.minHeight = dp(48)
+        view.gravity = Gravity.CENTER_VERTICAL or Gravity.START
+        view.isFocusable = true
         view.setOnClickListener { startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url))) }
     }
 
-    private fun show(target: String) {
+    private fun show(target: String, keepScroll: Boolean = false) {
+        val previousScroll = if (keepScroll && ::scroll.isInitialized) scroll.scrollY else 0
         screen = target
         window.statusBarColor = navy
         window.navigationBarColor = navy
@@ -141,7 +179,7 @@ class MainActivity : Activity() {
             window.decorView.systemUiVisibility = if (dark) 0 else mask
         }
         renderHeader()
-        val scroll = ScrollView(this).apply { isFillViewport = true }
+        scroll = ScrollView(this).apply { isFillViewport = true }
         root.addView(scroll, LinearLayout.LayoutParams(-1, 0, 1f))
         body = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
@@ -156,6 +194,8 @@ class MainActivity : Activity() {
             "about" -> renderAbout()
             else -> renderHome()
         }
+        if (target == "question") renderQuestionFooter()
+        if (previousScroll > 0) scroll.post { scroll.scrollTo(0, previousScroll) }
     }
 
     private fun renderHeader() {
@@ -165,50 +205,81 @@ class MainActivity : Activity() {
             setPadding(dp(18), dp(14), dp(18), dp(10))
         }
         root.addView(row)
-        val title = text("✦  " + tr("Matzpen", "מצפן", "بوصلة"), 23f, foreground, true)
-        row.addView(title, LinearLayout.LayoutParams(0, -2, 1f))
-        val languageButton = button(lang.uppercase(), false) {
-            lang = when (lang) { "he" -> "ar"; "ar" -> "en"; else -> "he" }
-            prefs.edit().putString("language", lang).apply()
-            show(screen)
-        }
-        row.addView(languageButton, LinearLayout.LayoutParams(dp(65), dp(48)))
+        row.addView(ImageView(this).apply { setImageResource(R.drawable.ic_matzpen_mark); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(34), dp(34)))
+        val title = text(tr("Matzpen", "מצפן", "بوصلة"), 21f, foreground, true)
+        row.addView(title, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(8) })
+        val languageButton = button(when (lang) { "he" -> "עברית"; "ar" -> "العربية"; else -> "English" }, false) { chooseLanguage() }
+        languageButton.textSize = 12f
+        languageButton.contentDescription = tr("Choose language", "בחירת שפה", "اختيار اللغة")
+        row.addView(languageButton, LinearLayout.LayoutParams(-2, dp(48)))
         val themeButton = button(if (dark) "☀" else "☾", false) {
             dark = !dark
             prefs.edit().putBoolean("dark", dark).apply()
-            show(screen)
+            show(screen, true)
         }
+        themeButton.contentDescription = tr("Change color theme", "שינוי ערכת צבעים", "تغيير المظهر")
         row.addView(themeButton, LinearLayout.LayoutParams(dp(54), dp(48)).apply { marginStart = dp(6) })
     }
 
+    private fun chooseLanguage() {
+        val ids = arrayOf("he", "ar", "en")
+        AlertDialog.Builder(this).setTitle(tr("Choose language", "בחירת שפה", "اختيار اللغة"))
+            .setSingleChoiceItems(arrayOf("עברית", "العربية", "English"), ids.indexOf(lang)) { dialog, index ->
+                lang = ids[index]
+                prefs.edit().putString("language", lang).apply()
+                dialog.dismiss()
+                show(screen, true)
+            }.setNegativeButton(tr("Cancel", "ביטול", "إلغاء"), null).show()
+    }
+
     private fun renderHome() {
-        addText(body, tr("Find your policy fit", "למצוא את ההתאמה המדינית שלך", "اكتشف توافقك مع السياسات"), 29f, foreground, true, 20)
+        addText(body, tr("A clearer view of your vote", "מבט בהיר יותר על הבחירה שלכם", "رؤية أوضح لاختيارك"), 30f, foreground, true, 28)
         addText(body, tr(
-            "Answer 18 policy questions. See how your views align with election lists, with evidence for every scored position.",
-            "ענו על 18 שאלות מדיניות וראו כיצד העמדות שלכם תואמות לרשימות, עם מקור לכל עמדה מנוקדת.",
-            "أجب عن 18 سؤالًا حول السياسات، وشاهد مدى توافق آرائك مع القوائم مع مصدر لكل موقف محسوب."
-        ), 16f, muted, top = 10)
-        card(body) { c ->
-            addText(c, tr("Election preview", "תמונת מצב לבחירות", "نظرة على الانتخابات"), 18f, foreground, true)
-            addText(c, tr("26th Knesset · 27 October 2026", "הכנסת ה־26 · 27 באוקטובר 2026", "الكنيست السادس والعشرون · 27 أكتوبر 2026"), 14f, muted, top = 7)
-            addText(c, tr("38 submitted lists · content updated ${data.updatedAt}", "38 רשימות שהוגשו · המידע עודכן ${data.updatedAt}", "38 قائمة مقدّمة · تحديث البيانات ${data.updatedAt}"), 14f, muted, top = 5)
-            addText(c, tr("Some list eligibility decisions are under court review. Check current official information before voting.", "ההכרעה לגבי כשירותן של חלק מהרשימות עדיין נבחנת בבית המשפט. בדקו מידע רשמי עדכני לפני ההצבעה.", "ما زالت أهلية بعض القوائم قيد المراجعة القضائية. تحقّق من المعلومات الرسمية قبل التصويت."), 13f, amber, top = 10)
+            "Explore where your views align with documented policy positions.",
+            "גלו היכן העמדות שלכם תואמות לעמדות מדיניות מתועדות.",
+            "اكتشف أين تتوافق آراؤك مع مواقف سياسية موثّقة."
+        ), 17f, muted, top = 12)
+        addText(body, tr("18 questions · about 5 minutes · private on this device", "18 שאלות · כ־5 דקות · פרטי במכשיר הזה", "18 سؤالًا · نحو 5 دقائق · خاص على هذا الجهاز"), 14f, accent, true, 20)
+        val count = answeredCount()
+        addButton(body, if (count > 0) tr("Continue questionnaire", "המשיכו בשאלון", "تابع الاستبيان") else tr("Start questionnaire", "התחילו בשאלון", "ابدأ الاستبيان"), true, 23) {
+            goToQuestion(if (count > 0) questionIndex else 0)
         }
-        addButton(body, tr("Start questionnaire", "התחילו בשאלון", "ابدأ الاستبيان"), true, 22) { questionIndex = 0; show("question") }
-        if (answers.isNotEmpty()) addButton(body, tr("View my matches", "הצגת ההתאמות שלי", "عرض التوافقات")) { show("results") }
-        addButton(body, tr("Browse all lists", "כל הרשימות", "تصفح جميع القوائم")) { show("lists") }
-        addButton(body, tr("About & data sources", "על האפליקציה ומקורות המידע", "حول التطبيق ومصادر البيانات")) { show("about") }
-        addText(body, tr("Your answers stay on this device. Alignment is not a voting recommendation.", "התשובות נשמרות במכשיר בלבד. התאמה אינה המלצת הצבעה.", "تبقى إجاباتك على هذا الجهاز. التوافق ليس توصية بالتصويت."), 13f, muted, top = 18)
+        if (count > 0) addText(body, tr("$count of ${data.questions.size} answered · saved automatically", "נענו $count מתוך ${data.questions.size} · נשמר אוטומטית", "أُجيب عن $count من ${data.questions.size} · حُفظ تلقائيًا"), 13f, muted, top = 8)
+        if (count >= 8) addButton(body, tr("View my matches", "הצגת ההתאמות שלי", "عرض التوافقات")) { show("results") }
+        addText(body, tr("Explore", "לגלות", "استكشف"), 19f, foreground, true, 30)
+        addButton(body, tr("Browse election lists", "עיון ברשימות", "تصفّح القوائم")) { show("lists") }
+        addButton(body, tr("About and sources", "על האפליקציה ומקורות", "حول التطبيق والمصادر")) { show("about") }
+        card(body) { c ->
+            addText(c, tr("Election data", "מידע על הבחירות", "بيانات الانتخابات"), 17f, foreground, true)
+            addText(c, tr("26th Knesset · 27 October 2026", "הכנסת ה־26 · 27 באוקטובר 2026", "الكنيست السادس والعشرون · 27 أكتوبر 2026"), 14f, muted, top = 7)
+            addText(c, tr("${data.lists.size} submitted lists · updated ${data.updatedAt}", "${data.lists.size} רשימות שהוגשו · עודכן ${data.updatedAt}", "${data.lists.size} قائمة مقدّمة · حُدّثت ${data.updatedAt}"), 14f, muted, top = 5)
+            addText(c, tr("Some eligibility decisions remain under court review. Check official information before voting.", "כשירותן של חלק מהרשימות עדיין בבדיקה משפטית. בדקו מידע רשמי לפני ההצבעה.", "ما زالت أهلية بعض القوائم قيد المراجعة القضائية. تحقّق من المعلومات الرسمية قبل التصويت."), 13f, amber, top = 10)
+        }
+        addText(body, tr("Alignment is not a voting recommendation. Your answers stay on this device.", "התאמה אינה המלצת הצבעה. התשובות נשמרות במכשיר הזה.", "التوافق ليس توصية بالتصويت. تبقى إجاباتك على هذا الجهاز."), 13f, muted, top = 18)
     }
 
     private fun renderQuestion() {
         val q = data.questions[questionIndex]
-        addText(body, tr("Question ${questionIndex + 1} of 18", "שאלה ${questionIndex + 1} מתוך 18", "السؤال ${questionIndex + 1} من 18"), 14f, accent, true, 8)
+        addText(body, tr("Question ${questionIndex + 1} / ${data.questions.size}", "שאלה ${questionIndex + 1} / ${data.questions.size}", "السؤال ${questionIndex + 1} / ${data.questions.size}"), 14f, accent, true, 8)
+        val progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
+            max = data.questions.size
+            this.progress = questionIndex + 1
+            progressTintList = android.content.res.ColorStateList.valueOf(accent)
+            progressBackgroundTintList = android.content.res.ColorStateList.valueOf(border)
+            contentDescription = tr("Question ${questionIndex + 1} of ${data.questions.size}", "שאלה ${questionIndex + 1} מתוך ${data.questions.size}", "السؤال ${questionIndex + 1} من ${data.questions.size}")
+        }
+        body.addView(progress, LinearLayout.LayoutParams(-1, dp(5)).apply { topMargin = dp(8) })
+        val jump = addText(body, tr("${answeredCount()} answered · Jump to question", "נענו ${answeredCount()} · מעבר לשאלה", "أُجيب عن ${answeredCount()} · انتقل إلى سؤال"), 13f, muted, top = 8)
+        jump.minHeight = dp(48)
+        jump.gravity = Gravity.CENTER_VERTICAL or Gravity.START
+        jump.isFocusable = true
+        jump.setOnClickListener { showQuestionIndex() }
         card(body) { c ->
-            addText(c, q.text(lang), 21f, foreground, true)
+            addText(c, q.text(lang), 23f, foreground, true)
             link(c, tr("Original issue and context", "הנושא וההסבר המקוריים", "السؤال الأصلي والسياق"), q.sourceUrl)
         }
-        addText(body, tr("How much do you agree?", "עד כמה אתם מסכימים?", "إلى أي مدى توافق؟"), 16f, muted, top = 22)
+        addText(body, tr("Your view", "העמדה שלכם", "رأيك"), 19f, foreground, true, 22)
+        addText(body, tr("How much do you agree?", "עד כמה אתם מסכימים?", "إلى أي مدى توافق؟"), 14f, muted, top = 4)
         val labels = arrayOf(
             tr("Strongly disagree", "מתנגדים מאוד", "أعارض بشدة"),
             tr("Disagree", "מתנגדים", "أعارض"),
@@ -218,106 +289,295 @@ class MainActivity : Activity() {
         )
         for (value in -2..2) {
             val chosen = answers[q.id]?.value == value
-            addButton(body, (if (chosen) "✓  " else "") + labels[value + 2], chosen, 7) {
+            addButton(body, (if (chosen) "✓  " else "") + labels[value + 2], chosen, 6) {
                 answers[q.id] = VoterAnswer(value, answers[q.id]?.priority ?: false)
-                saveAnswers(); show("question")
+                saveAnswers(); show("question", true)
             }
         }
         val priority = CheckBox(this).apply {
-            text = tr("Especially important to me (up to 3)", "חשוב לי במיוחד (עד 3)", "مهم جدًا بالنسبة لي (حتى 3)")
+            text = tr("Especially important to me · ${priorityCount()} / 3", "חשוב לי במיוחד · ${priorityCount()} / 3", "مهم جدًا بالنسبة لي · ${priorityCount()} / 3")
             setTextColor(this@MainActivity.foreground)
             buttonTintList = android.content.res.ColorStateList.valueOf(accent)
+            minHeight = dp(54)
             isChecked = answers[q.id]?.priority == true
             setOnCheckedChangeListener { _, checked ->
                 val answer = answers[q.id]
-                if (answer == null) { isChecked = false; return@setOnCheckedChangeListener }
-                if (checked && answers.values.count { it.priority } >= 3) { isChecked = false; return@setOnCheckedChangeListener }
+                if (answer == null) {
+                    isChecked = false
+                    Toast.makeText(this@MainActivity, tr("Choose an answer first", "בחרו תשובה תחילה", "اختر إجابة أولًا"), Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
+                if (checked && priorityCount() >= 3) {
+                    isChecked = false
+                    Toast.makeText(this@MainActivity, tr("You can choose up to 3 priorities", "אפשר לבחור עד 3 נושאים חשובים", "يمكن اختيار حتى 3 أولويات"), Toast.LENGTH_SHORT).show()
+                    return@setOnCheckedChangeListener
+                }
                 answers[q.id] = answer.copy(priority = checked)
                 saveAnswers()
+                show("question", true)
             }
         }
         body.addView(priority, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(13) })
-        addButton(body, tr("Skip this question", "דילוג על שאלה זו", "تخطَّ هذا السؤال"), top = 4) {
-            answers.remove(q.id); saveAnswers(); nextQuestion()
+        addText(body, tr("Priorities count twice in your match score.", "נושאים חשובים מקבלים משקל כפול בציון ההתאמה.", "تُحتسب الأولويات بوزن مضاعف في درجة التوافق."), 13f, muted, top = 3)
+    }
+
+    private fun showQuestionIndex() {
+        val items = data.questions.mapIndexed { index, q ->
+            "${if (answers.containsKey(q.id)) "✓" else "○"}  ${index + 1}. ${q.text(lang)}"
+        }.toTypedArray()
+        AlertDialog.Builder(this).setTitle(tr("Questions", "השאלות", "الأسئلة"))
+            .setItems(items) { dialog, index -> dialog.dismiss(); goToQuestion(index) }
+            .setNegativeButton(tr("Close", "סגירה", "إغلاق"), null).show()
+    }
+
+    private fun renderQuestionFooter() {
+        val footer = LinearLayout(this).apply {
+            orientation = LinearLayout.HORIZONTAL
+            setPadding(dp(20), dp(10), dp(20), dp(12))
+            setBackgroundColor(navy)
         }
-        val nav = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
-        body.addView(nav, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(14) })
-        nav.addView(button(tr("Previous", "הקודמת", "السابق")) { questionIndex = (questionIndex - 1).coerceAtLeast(0); show("question") }, LinearLayout.LayoutParams(0, -2, 1f))
-        nav.addView(button(tr("Next / results", "הבאה / תוצאות", "التالي / النتائج"), true) { nextQuestion() }, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(8) })
-        addButton(body, tr("Back to home", "חזרה לבית", "العودة للرئيسية"), top = 16) { show("home") }
+        root.addView(footer, LinearLayout.LayoutParams(-1, -2))
+        val previous = button(tr("Previous", "הקודמת", "السابق")) { goToQuestion(questionIndex - 1) }
+        previous.isEnabled = questionIndex > 0
+        previous.alpha = if (previous.isEnabled) 1f else .45f
+        footer.addView(previous, LinearLayout.LayoutParams(0, dp(54), 1f))
+        val skip = button(tr("Skip", "דילוג", "تخطَّ")) {
+            answers.remove(data.questions[questionIndex].id)
+            saveAnswers()
+            nextQuestion()
+        }
+        footer.addView(skip, LinearLayout.LayoutParams(0, dp(54), .8f).apply { marginStart = dp(6) })
+        val last = questionIndex == data.questions.lastIndex
+        val next = button(if (last) tr("See matches", "הצגת התאמות", "عرض التوافقات") else tr("Next question", "השאלה הבאה", "السؤال التالي"), true) { nextQuestion() }
+        next.isEnabled = answers.containsKey(data.questions[questionIndex].id)
+        next.alpha = if (next.isEnabled) 1f else .45f
+        footer.addView(next, LinearLayout.LayoutParams(0, dp(54), 1.6f).apply { marginStart = dp(6) })
     }
 
     private fun nextQuestion() {
-        if (questionIndex < data.questions.lastIndex) { questionIndex++; show("question") } else show("results")
+        if (questionIndex < data.questions.lastIndex) goToQuestion(questionIndex + 1) else show("results")
     }
 
     private fun renderResults() {
-        val count = data.questions.count { answers.containsKey(it.id) }
+        val count = answeredCount()
         addText(body, tr("Your policy matches", "ההתאמות המדיניות שלכם", "توافقك مع السياسات"), 27f, foreground, true, 12)
-        addText(body, tr("$count of 18 answered · ${answers.values.count { it.priority }} priorities", "נענו $count מתוך 18 · ${answers.values.count { it.priority }} נושאים חשובים", "أُجيب عن $count من 18 · ${answers.values.count { it.priority }} أولويات"), 14f, muted, top = 7)
+        addText(body, tr("$count of ${data.questions.size} answered · ${priorityCount()} priorities", "נענו $count מתוך ${data.questions.size} · ${priorityCount()} נושאים חשובים", "أُجيب عن $count من ${data.questions.size} · ${priorityCount()} أولويات"), 14f, muted, top = 7)
         if (count < 8) {
-            card(body) { c -> addText(c, tr("Answer at least 8 questions to see ranked matches.", "ענו על 8 שאלות לפחות כדי לראות דירוג.", "أجب عن 8 أسئلة على الأقل لرؤية الترتيب."), 16f) }
-            addButton(body, tr("Continue questionnaire", "המשיכו בשאלון", "تابع الاستبيان"), true) { show("question") }
+            card(body) { c ->
+                addText(c, tr("A few more answers will make the comparison useful.", "עוד כמה תשובות יעזרו להשוות בין הרשימות.", "بعض الإجابات الإضافية ستجعل المقارنة مفيدة."), 18f, foreground, true)
+                addText(c, tr("Answer at least 8 questions to see ranked matches.", "ענו על 8 שאלות לפחות כדי לראות התאמות מדורגות.", "أجب عن 8 أسئلة على الأقل لرؤية التوافقات المرتبة."), 14f, muted, top = 8)
+            }
+            addButton(body, tr("Continue questionnaire", "המשיכו בשאלון", "تابع الاستبيان"), true) { goToQuestion(questionIndex) }
             return
         }
-        addText(body, tr("Scores use policy agreement only. Missing evidence reduces coverage, and lists below 70% coverage are not ranked.", "הציונים מבוססים רק על הסכמה בנושאי מדיניות. חוסר ראיות מפחית את הכיסוי, ורשימות עם פחות מ־70% כיסוי אינן מדורגות.", "تعتمد الدرجات على توافق السياسات فقط. يقلّل غياب الأدلة من التغطية، ولا تُرتّب القوائم التي تقل تغطيتها عن 70٪."), 13f, muted, top = 10)
+        addText(body, tr("A score shows agreement on answered issues with documented positions. It is not a voting recommendation.", "הציון מציג הסכמה בנושאים שעניתם עליהם ושיש לגביהם עמדה מתועדת. זו אינה המלצת הצבעה.", "تعرض الدرجة التوافق في المسائل التي أجبت عنها ولها موقف موثّق. وهي ليست توصية بالتصويت."), 14f, muted, top = 12)
+        val explainer = addText(body, tr("How matching works", "איך נקבעת ההתאמה", "كيف يُحسب التوافق"), 14f, accent, true, 9)
+        explainer.minHeight = dp(48)
+        explainer.gravity = Gravity.CENTER_VERTICAL or Gravity.START
+        explainer.isFocusable = true
+        explainer.setOnClickListener { showMatchingExplanation() }
+        val results = ScoreEngine.results(data, answers)
+        val ranked = results.filter { it.score != null }
+        val unranked = results.filter { it.score == null }
+        addText(body, tr("Ranked matches", "התאמות מדורגות", "التوافقات المرتبة"), 19f, foreground, true, 15)
+        if (ranked.isEmpty()) card(body) { c -> addText(c, tr("No list has enough documented positions for a rank with these answers.", "אין רשימה עם די עמדות מתועדות לדירוג לפי התשובות האלה.", "لا تملك أي قائمة مواقف موثّقة كافية للترتيب وفق هذه الإجابات."), 15f) }
         var lastScore: Int? = null
         var rank = 0
-        ScoreEngine.results(data, answers).forEachIndexed { index, result ->
-            if (result.score != null && result.score != lastScore) { rank = index + 1; lastScore = result.score }
-            card(body) { c ->
-                addText(c, (if (result.score != null) "$rank. " else "") + result.list.name(lang) + "  ·  ${result.list.ballot}", 18f, foreground, true)
-                addText(c, if (result.score == null) tr("Insufficient evidence", "אין מספיק ראיות", "أدلة غير كافية") else "${result.score}%", 20f, if (result.score == null) muted else accent, true, 7)
-                addText(c, tr("Evidence coverage ${(result.coverage * 100).roundToInt()}%", "כיסוי ראיות ${(result.coverage * 100).roundToInt()}%", "تغطية الأدلة ${(result.coverage * 100).roundToInt()}٪"), 13f, muted, top = 3)
-                if (result.list.status == "court_review") addText(c, tr("Eligibility under court review", "כשירות בבדיקה משפטית", "الأهلية قيد المراجعة القضائية"), 12f, amber, top = 5)
-                addButton(c, tr("Why this result", "למה התוצאה הזאת", "لماذا هذه النتيجة"), top = 9) { selectedList = result.list.id; show("detail") }
-            }
+        ranked.forEachIndexed { index, result ->
+            if (result.score != lastScore) { rank = index + 1; lastScore = result.score }
+            if (showAllRanked || index < 3) resultCard(result, rank)
         }
-        addButton(body, tr("Edit answers", "עריכת תשובות", "تعديل الإجابات"), top = 20) { show("question") }
-        addButton(body, tr("Home", "בית", "الرئيسية")) { show("home") }
+        if (ranked.size > 3) addButton(body, if (showAllRanked) tr("Show fewer", "הצגת פחות", "عرض أقل") else tr("Show all ${ranked.size} ranked lists", "הצגת כל ${ranked.size} הרשימות המדורגות", "عرض القوائم المرتبة الـ${ranked.size}"), top = 12) {
+            showAllRanked = !showAllRanked; show("results", true)
+        }
+        addText(body, tr("Not enough evidence", "אין מספיק ראיות", "أدلة غير كافية"), 19f, foreground, true, 28)
+        addText(body, tr("These lists remain available to inspect; missing positions are not counted as disagreement.", "אפשר לעיין גם ברשימות האלה; עמדה חסרה אינה נחשבת לחוסר הסכמה.", "يمكن الاطلاع على هذه القوائم؛ المواقف الناقصة لا تُعدّ اختلافًا."), 13f, muted, top = 5)
+        addButton(body, if (showUnranked) tr("Hide ${unranked.size} lists", "הסתרת ${unranked.size} רשימות", "إخفاء ${unranked.size} قوائم") else tr("View ${unranked.size} lists", "הצגת ${unranked.size} רשימות", "عرض ${unranked.size} قوائم"), top = 12) {
+            showUnranked = !showUnranked; show("results", true)
+        }
+        if (showUnranked) unranked.forEach { resultCard(it, null) }
+        addButton(body, tr("Edit answers", "עריכת תשובות", "تعديل الإجابات"), top = 20) { goToQuestion(questionIndex) }
+        addText(body, tr("Data updated ${data.updatedAt}. Check current official information before voting.", "המידע עודכן ${data.updatedAt}. בדקו מידע רשמי עדכני לפני ההצבעה.", "حُدّثت البيانات ${data.updatedAt}. تحقّق من المعلومات الرسمية قبل التصويت."), 13f, muted, top = 18)
+    }
+
+    private fun resultCard(result: MatchResult, rank: Int?) {
+        val scoreText = result.score?.let { wrapped("$it%") }
+        val tile = card(body) { c ->
+            addText(c, (if (rank == null) "" else "$rank. ") + wrapped(result.list.name(lang)) + "  ·  " + wrapped(result.list.ballot), 18f, foreground, true)
+            addText(c, if (scoreText == null) tr("Unranked", "ללא דירוג", "غير مرتبة") else tr("$scoreText alignment", "$scoreText התאמה", "توافق $scoreText"), 17f, if (result.score == null) muted else accent, true, 6)
+            addText(c, tr("Evidence coverage ${percent(result.coverage)}", "כיסוי ראיות ${percent(result.coverage)}", "تغطية الأدلة ${percent(result.coverage)}"), 13f, muted, top = 4)
+            if (result.list.status == "court_review") addText(c, tr("Eligibility under court review", "כשירות בבדיקה משפטית", "الأهلية قيد المراجعة القضائية"), 13f, amber, top = 5)
+            addText(c, tr("Compare positions  ›", "השוואת עמדות  ‹", "قارن المواقف  ‹"), 13f, accent, true, 8)
+        }
+        tile.isClickable = true
+        tile.isFocusable = true
+        val spokenScore = scoreText ?: tr("unranked", "ללא דירוג", "غير مرتبة")
+        tile.contentDescription = tr(
+            "${result.list.name(lang)}, $spokenScore alignment, ${percent(result.coverage)} evidence coverage. Compare positions.",
+            "${result.list.name(lang)}, התאמה $spokenScore, כיסוי ראיות ${percent(result.coverage)}. השוואת עמדות.",
+            "${result.list.name(lang)}، توافق $spokenScore، تغطية الأدلة ${percent(result.coverage)}. قارن المواقف."
+        )
+        tile.setOnClickListener { openDetail(result.list.id, "results") }
+    }
+
+    private fun showMatchingExplanation() {
+        AlertDialog.Builder(this).setTitle(tr("How matching works", "איך נקבעת ההתאמה", "كيف يُحسب التوافق"))
+            .setMessage(tr(
+                "After 8 answers, each documented list position is compared with your answer. A priority counts twice. The percentage averages agreement only where a qualifying source exists. Lists need at least 70% weighted evidence coverage to be ranked; ties share a rank. Unknown positions are not disagreements. This is policy alignment, not a voting recommendation.",
+                "לאחר 8 תשובות, כל עמדה מתועדת של רשימה מושווית לתשובתכם. נושא חשוב מקבל משקל כפול. האחוז הוא ממוצע ההסכמה רק כאשר קיים מקור מתאים. לדירוג נדרש כיסוי ראיות משוקלל של 70% לפחות; ציונים זהים חולקים דירוג. עמדה לא ידועה אינה חוסר הסכמה. זו התאמה מדינית, לא המלצת הצבעה.",
+                "بعد 8 إجابات، يُقارَن كل موقف موثّق للقائمة بإجابتك. تُحتسب الأولوية بوزن مضاعف. النسبة هي متوسط التوافق فقط عند وجود مصدر مؤهل. يلزم توفر أدلة مرجّحة بنسبة 70٪ على الأقل للترتيب؛ والنتائج المتساوية تشترك في المرتبة. الموقف المجهول ليس اختلافًا. هذا توافق سياسي وليس توصية بالتصويت."
+            )).setPositiveButton(tr("Done", "סיום", "تم"), null).show()
     }
 
     private fun renderLists() {
-        addText(body, tr("All 38 submitted lists", "כל 38 הרשימות שהוגשו", "جميع القوائم الـ38 المقدّمة"), 26f, foreground, true, 12)
-        addText(body, tr("Ballot letters and status reflect the ${data.updatedAt} snapshot.", "אותיות הפתק והמעמד נכונים לתמונת המצב מ־${data.updatedAt}.", "الحروف والحالة حسب بيانات ${data.updatedAt}."), 13f, muted, top = 8)
-        data.lists.sortedBy { it.he }.forEach { list ->
-            card(body) { c ->
-                addText(c, list.name(lang) + "  ·  ${list.ballot}", 18f, foreground, true)
-                addText(c, if (list.status == "court_review") tr("Under court review", "בבדיקה משפטית", "قيد المراجعة القضائية") else tr("Committee approved", "אושרה בוועדה", "أقرّتها اللجنة"), 12f, if (list.status == "court_review") amber else muted, top = 5)
-                addButton(c, tr("View evidence", "הצגת ראיות", "عرض الأدلة"), top = 8) { selectedList = list.id; show("detail") }
+        addText(body, tr("Election lists", "רשימות הבחירות", "القوائم الانتخابية"), 27f, foreground, true, 12)
+        addText(body, tr("${data.lists.size} submitted lists · snapshot ${data.updatedAt}", "${data.lists.size} רשימות שהוגשו · תמונת מצב ${data.updatedAt}", "${data.lists.size} قائمة مقدّمة · بيانات ${data.updatedAt}"), 14f, muted, top = 7)
+        val search = EditText(this).apply {
+            hint = tr("Search name or ballot letters", "חיפוש שם או אותיות פתק", "ابحث بالاسم أو حروف الاقتراع")
+            textSize = 16f
+            setTextColor(this@MainActivity.foreground)
+            setHintTextColor(muted)
+            minHeight = dp(56)
+            isSingleLine = true
+            setPadding(dp(16), dp(10), dp(16), dp(10))
+            background = box(surface, 14)
+        }
+        body.addView(search, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+        val filters = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        body.addView(filters, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(10) })
+        val items = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        body.addView(items, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(8) })
+        fun refresh() {
+            filters.removeAllViews()
+            items.removeAllViews()
+            listOf(
+                "all" to tr("All", "הכול", "الكل"),
+                "approved" to tr("Approved", "אושרו", "مُقرة"),
+                "review" to tr("Under review", "בבדיקה", "قيد المراجعة")
+            ).forEach { (id, label) ->
+                val chip = button(label, listFilter == id) { listFilter = id; refresh() }.apply { textSize = 12f }
+                filters.addView(chip, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(5) })
+            }
+            val query = search.text.toString().trim().lowercase()
+            val visible = data.lists.filter { list ->
+                (listFilter == "all" || (listFilter == "review") == (list.status == "court_review")) &&
+                    (query.isEmpty() || list.he.lowercase().contains(query) || list.en.lowercase().contains(query) || list.ballot.lowercase().contains(query))
+            }.sortedBy { it.he }
+            if (visible.isEmpty()) card(items) { c -> addText(c, tr("No lists match this search.", "לא נמצאו רשימות מתאימות.", "لا توجد قوائم مطابقة."), 15f) }
+            visible.forEach { list ->
+                val tile = card(items) { c ->
+                    addText(c, wrapped(list.name(lang)) + "  ·  " + wrapped(list.ballot), 17f, foreground, true)
+                    addText(c, if (list.status == "court_review") tr("Eligibility under court review", "כשירות בבדיקה משפטית", "الأهلية قيد المراجعة القضائية") else tr("Committee approved", "אושרה בוועדה", "أقرّتها اللجنة"), 13f, if (list.status == "court_review") amber else muted, top = 5)
+                    addText(c, tr("View positions and sources  ›", "הצגת עמדות ומקורות  ‹", "عرض المواقف والمصادر  ‹"), 13f, accent, true, 8)
+                }
+                tile.isClickable = true
+                tile.isFocusable = true
+                tile.contentDescription = tr("View positions and sources for ${list.name(lang)}", "הצגת עמדות ומקורות של ${list.name(lang)}", "عرض مواقف ومصادر ${list.name(lang)}")
+                tile.setOnClickListener { openDetail(list.id, "lists") }
             }
         }
-        addButton(body, tr("Home", "בית", "الرئيسية"), top = 20) { show("home") }
+        search.addTextChangedListener(object : TextWatcher {
+            override fun beforeTextChanged(s: CharSequence?, start: Int, count: Int, after: Int) {}
+            override fun onTextChanged(s: CharSequence?, start: Int, before: Int, count: Int) { refresh() }
+            override fun afterTextChanged(s: Editable?) {}
+        })
+        refresh()
+    }
+
+    private fun openDetail(id: String, from: String) {
+        selectedList = id
+        detailReturn = from
+        detailFilter = "all"
+        show("detail")
     }
 
     private fun renderDetail() {
         val list = data.lists.firstOrNull { it.id == selectedList } ?: return show("lists")
-        addText(body, list.name(lang) + "  ·  ${list.ballot}", 25f, foreground, true, 12)
+        addText(body, wrapped(list.name(lang)) + "  ·  " + wrapped(list.ballot), 27f, foreground, true, 12)
         addText(body, if (list.status == "court_review") tr("Eligibility under court review", "כשירות בבדיקה משפטית", "الأهلية قيد المراجعة القضائية") else tr("Committee approved list", "רשימה שאושרה בוועדה", "قائمة أقرّتها اللجنة"), 13f, if (list.status == "court_review") amber else muted, top = 7)
         link(body, tr("List profile and status", "פרופיל הרשימה ומעמדה", "ملف القائمة وحالتها"), list.sourceUrl)
         val result = ScoreEngine.results(data, answers).firstOrNull { it.list.id == list.id }
-        if (result != null && answers.size >= 8) addText(body, tr("Match: ${result.score?.let { "$it%" } ?: "unranked"} · coverage ${(result.coverage * 100).roundToInt()}%", "התאמה: ${result.score?.let { "$it%" } ?: "ללא דירוג"} · כיסוי ${(result.coverage * 100).roundToInt()}%", "التوافق: ${result.score?.let { "$it%" } ?: "غير مرتبة"} · التغطية ${(result.coverage * 100).roundToInt()}٪"), 16f, accent, true, 14)
-        data.questions.forEach { q ->
-            val position = data.positions[list.id to q.id]
-            card(body) { c ->
-                addText(c, q.text(lang), 15f, foreground, true)
-                val stance = when (position?.value) {
-                    -2 -> tr("Against", "נגד", "ضد")
-                    0 -> tr("Mixed / conditional", "עמדה חלקית / מותנית", "موقف جزئي / مشروط")
-                    2 -> tr("For", "בעד", "مع")
-                    else -> tr("No qualifying source", "אין מקור מתאים", "لا يوجد مصدر مؤهل")
-                }
-                addText(c, stance, 14f, if (position == null) muted else accent, true, 8)
-                if (position != null) {
-                    addText(c, "${position.sourceType} · ${position.sourceDate}", 12f, muted, top = 4)
-                    link(c, position.sourceTitle, position.sourceUrl)
-                }
-                answers[q.id]?.let { answer ->
-                    addText(c, tr("Your answer: ${answer.value}", "התשובה שלכם: ${answer.value}", "إجابتك: ${answer.value}"), 12f, muted, top = 6)
+        if (result != null && answeredCount() >= 8) card(body) { c ->
+            val scoreText = result.score?.let { wrapped("$it%") }
+            addText(c, if (scoreText == null) tr("Unranked · not enough evidence", "ללא דירוג · אין מספיק ראיות", "غير مرتبة · أدلة غير كافية") else tr("$scoreText policy alignment", "$scoreText התאמה מדינית", "توافق سياسي $scoreText"), 19f, if (result.score == null) muted else accent, true)
+            addText(c, tr("Evidence coverage ${percent(result.coverage)}", "כיסוי ראיות ${percent(result.coverage)}", "تغطية الأدلة ${percent(result.coverage)}"), 13f, muted, top = 5)
+        }
+        val answered = data.questions.filter { answers.containsKey(it.id) }
+        if (answered.isNotEmpty()) {
+            val aligned = answered.count { issueCategory(answers[it.id], data.positions[list.id to it.id]) == "aligned" }
+            val different = answered.count { issueCategory(answers[it.id], data.positions[list.id to it.id]) == "different" }
+            val unknown = answered.count { issueCategory(answers[it.id], data.positions[list.id to it.id]) == "unknown" }
+            addText(body, tr("Where views meet or differ", "איפה העמדות דומות או שונות", "أين تتوافق الآراء أو تختلف"), 19f, foreground, true, 22)
+            addText(body, tr("$aligned broadly aligned · $different different · $unknown without a documented position", "$aligned דומות בקירוב · $different שונות · $unknown ללא עמדה מתועדת", "$aligned متوافقة عمومًا · $different مختلفة · $unknown دون موقف موثّق"), 14f, muted, top = 7)
+            addText(body, tr("Broad alignment means the positions are at most one step apart on the answer scale.", "דמיון בקירוב פירושו פער של שלב אחד לכל היותר בסולם התשובות.", "التوافق العام يعني أن الفارق لا يزيد على درجة واحدة في سلّم الإجابات."), 12f, muted, top = 5)
+        } else addText(body, tr("Answer questions to compare your views with this list.", "ענו על שאלות כדי להשוות את עמדותיכם לרשימה.", "أجب عن الأسئلة لمقارنة آرائك بهذه القائمة."), 14f, muted, top = 18)
+        val filters = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+        body.addView(filters, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
+        val items = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
+        body.addView(items)
+        fun refresh() {
+            filters.removeAllViews()
+            items.removeAllViews()
+            val choices = if (answered.isEmpty()) listOf("all" to tr("All issues", "כל הנושאים", "كل المسائل")) else listOf(
+                "all" to tr("All", "הכול", "الكل"),
+                "aligned" to tr("Agreement", "דמיון", "توافق"),
+                "different" to tr("Differences", "הבדלים", "اختلافات"),
+                "unknown" to tr("Unknown", "לא ידוע", "مجهول")
+            )
+            choices.forEach { (id, label) ->
+                val chip = button(label, detailFilter == id) { detailFilter = id; refresh() }.apply { textSize = 11f }
+                filters.addView(chip, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
+            }
+            val candidates = if (answered.isEmpty()) data.questions else answered
+            val visible = candidates.filter { detailFilter == "all" || issueCategory(answers[it.id], data.positions[list.id to it.id]) == detailFilter }
+            if (visible.isEmpty()) card(items) { c -> addText(c, tr("No issues in this section.", "אין נושאים בחלק הזה.", "لا توجد مسائل في هذا القسم."), 15f) }
+            visible.forEach { q ->
+                val answer = answers[q.id]
+                val position = data.positions[list.id to q.id]
+                card(items) { c ->
+                    addText(c, q.text(lang), 17f, foreground, true)
+                    addText(c, tr("Your view", "העמדה שלכם", "رأيك"), 12f, muted, true, 13)
+                    addText(c, answer?.let { answerLabel(it.value) } ?: tr("Not answered", "לא נענה", "لم تُجب"), 15f, foreground, top = 3)
+                    addText(c, tr("Documented list position", "העמדה המתועדת של הרשימה", "موقف القائمة الموثّق"), 12f, muted, true, 12)
+                    addText(c, positionLabel(position?.value), 15f, if (position == null) muted else foreground, top = 3)
+                    if (position != null) {
+                        addText(c, tr("Source", "מקור", "المصدر"), 12f, muted, true, 12)
+                        addText(c, "${sourceType(position.sourceType)} · ${position.sourceDate}", 13f, muted, top = 3)
+                        val note = if (lang != "he" && position.sourceTitle.any { it in '\u0590'..'\u05FF' }) tr("Open original Hebrew source", "פתיחת המקור בעברית", "افتح المصدر العبري الأصلي") else tr("Open original source", "פתיחת המקור", "افتح المصدر الأصلي")
+                        link(c, note, position.sourceUrl)
+                        addText(c, position.sourceTitle, 12f, muted)
+                    }
                 }
             }
         }
-        addButton(body, tr("Back to results", "חזרה לתוצאות", "العودة للنتائج"), top = 18) { show(if (answers.size >= 8) "results" else "lists") }
+        refresh()
+        addButton(body, tr("Back", "חזרה", "رجوع"), top = 18) { show(detailReturn) }
+    }
+
+    private fun positionLabel(value: Int?) = when (value) {
+        -2 -> tr("Against", "נגד", "ضد")
+        0 -> tr("Conditional or mixed", "חלקית או מותנית", "مشروط أو مختلط")
+        2 -> tr("For", "בעד", "مع")
+        else -> tr("No qualifying source", "אין מקור מתאים", "لا يوجد مصدر مؤهل")
+    }
+    private fun sourceType(value: String) = when (value) {
+        "platform" -> tr("Platform", "מצע", "برنامج")
+        "vote" -> tr("Vote", "הצבעה", "تصويت")
+        "statement" -> tr("Statement", "הצהרה", "تصريح")
+        else -> value
+    }
+    private fun issueCategory(answer: VoterAnswer?, position: Position?): String = when {
+        answer == null -> "unanswered"
+        position == null -> "unknown"
+        abs(answer.value - position.value) <= 1 -> "aligned"
+        else -> "different"
+    }
+    private fun answerLabel(value: Int) = when (value) {
+        -2 -> tr("Strongly disagree", "מתנגדים מאוד", "أعارض بشدة")
+        -1 -> tr("Disagree", "מתנגדים", "أعارض")
+        0 -> tr("Unsure / mixed", "לא בטוחים / מעורב", "غير متأكد / موقف مختلط")
+        1 -> tr("Agree", "מסכימים", "أوافق")
+        else -> tr("Strongly agree", "מסכימים מאוד", "أوافق بشدة")
     }
 
     private fun renderAbout() {
@@ -335,20 +595,30 @@ class MainActivity : Activity() {
         }
         card(body) { c ->
             addText(c, "Andrei Efremuahkin", 17f, foreground, true)
-            val email = addText(c, "andrei.efr@gmail.com ↗", 13f, Color.rgb(62, 211, 190), top = 8)
+            val email = addText(c, "andrei.efr@gmail.com ↗", 14f, accent, true, 8)
+            email.minHeight = dp(48)
+            email.gravity = Gravity.CENTER_VERTICAL or Gravity.START
+            email.isFocusable = true
             email.setOnClickListener { startActivity(Intent(Intent.ACTION_SENDTO, Uri.parse("mailto:andrei.efr@gmail.com"))) }
-            link(c, "github.com/efremandrei/matzpen", "https://github.com/efremandrei/matzpen")
+            link(c, "github.com/efremandrei/Matzpen", "https://github.com/efremandrei/Matzpen")
             val info = packageManager.getPackageInfo(packageName, 0)
             val build = if (Build.VERSION.SDK_INT >= 28) info.longVersionCode else info.versionCode.toLong()
             addText(c, "Version ${info.versionName} · build $build", 13f, muted, top = 8)
         }
         addButton(body, tr("Delete my answers", "מחיקת התשובות שלי", "حذف إجاباتي"), top = 20) {
-            answers.clear(); saveAnswers(); show("home")
+            AlertDialog.Builder(this).setTitle(tr("Delete answers?", "למחוק את התשובות?", "حذف الإجابات؟"))
+                .setMessage(tr("This deletes answers saved on this device. It cannot be undone.", "התשובות השמורות במכשיר הזה יימחקו. לא ניתן לבטל זאת.", "سيؤدي هذا إلى حذف الإجابات المحفوظة على هذا الجهاز، ولا يمكن التراجع."))
+                .setNegativeButton(tr("Cancel", "ביטול", "إلغاء"), null)
+                .setPositiveButton(tr("Delete", "מחיקה", "حذف")) { _, _ ->
+                    answers.clear(); saveAnswers(); questionIndex = 0
+                    prefs.edit().putInt("question_index", 0).apply()
+                    show("home")
+                }.show()
         }
         addButton(body, tr("Home", "בית", "الرئيسية")) { show("home") }
     }
 
     override fun onBackPressed() {
-        when (screen) { "detail" -> show(if (answers.size >= 8) "results" else "lists"); "home" -> super.onBackPressed(); else -> show("home") }
+        when (screen) { "detail" -> show(detailReturn); "home" -> super.onBackPressed(); else -> show("home") }
     }
 }
