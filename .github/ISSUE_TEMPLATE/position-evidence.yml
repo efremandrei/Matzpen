@@ -1,0 +1,50 @@
+name: Party position or correction
+description: Submit a public source for one election question and list.
+title: "Position evidence: "
+body:
+  - type: input
+    id: list
+    attributes:
+      label: Election list
+      description: Use the list name shown in the app.
+    validations:
+      required: true
+  - type: input
+    id: question
+    attributes:
+      label: Question
+      description: Paste the exact question or its source URL.
+    validations:
+      required: true
+  - type: dropdown
+    id: stance
+    attributes:
+      label: Position supported by the source
+      options:
+        - Supports the statement
+        - Opposes the statement
+        - Conditional or mixed
+        - Disputes the current coding
+    validations:
+      required: true
+  - type: input
+    id: url
+    attributes:
+      label: Public source URL
+      description: A dated party document or verified public statement is preferred.
+    validations:
+      required: true
+  - type: input
+    id: date
+    attributes:
+      label: Publication date
+      placeholder: YYYY-MM-DD
+    validations:
+      required: true
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Relevant passage and context
+      description: Give a short excerpt or section reference; avoid copying large passages.
+    validations:
+      required: true
