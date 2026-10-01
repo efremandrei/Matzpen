@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.2.0 — 2026-10-01
+
+- Added Quick (10), Balanced (14), and Full (18) questionnaire depths. Switching depth preserves answers and adds questions to the existing comparison.
+- Added an independently saved Israeli blue-and-white palette, selected with a Star of David control beside the sun/moon button.
+- Added subtle touch ripples and screen transitions that honor Android's animation-duration setting.
+
 ## 1.1.0 — 2026-10-01
 
 - Redesigned welcome, questionnaire, match results, list browsing, and evidence comparison screens.

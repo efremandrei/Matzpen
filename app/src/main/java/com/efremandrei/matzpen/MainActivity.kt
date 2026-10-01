@@ -3,12 +3,15 @@ package com.efremandrei.matzpen
 import android.app.Activity
 import android.app.AlertDialog
 import android.content.Intent
+import android.content.res.ColorStateList
 import android.graphics.Color
 import android.graphics.Typeface
 import android.graphics.drawable.GradientDrawable
+import android.graphics.drawable.RippleDrawable
 import android.net.Uri
 import android.os.Build
 import android.os.Bundle
+import android.provider.Settings
 import android.text.BidiFormatter
 import android.text.Editable
 import android.text.TextWatcher
@@ -36,7 +39,9 @@ class MainActivity : Activity() {
     private val answers = mutableMapOf<String, VoterAnswer>()
     private var lang = "he"
     private var dark = true
+    private var israeli = false
     private var screen = "home"
+    private var depth = QuestionDepth.BALANCED
     private var questionIndex = 0
     private var selectedList: String? = null
     private var detailReturn = "results"
@@ -48,19 +53,21 @@ class MainActivity : Activity() {
     private lateinit var body: LinearLayout
     private lateinit var scroll: ScrollView
 
-    private val navy get() = if (dark) Color.rgb(11, 20, 36) else Color.rgb(245, 247, 248)
-    private val surface get() = if (dark) Color.rgb(23, 38, 58) else Color.WHITE
-    private val foreground get() = if (dark) Color.rgb(243, 247, 250) else Color.rgb(23, 36, 53)
-    private val muted get() = if (dark) Color.rgb(185, 201, 214) else Color.rgb(82, 98, 115)
-    private val accent get() = if (dark) Color.rgb(82, 219, 198) else Color.rgb(8, 124, 114)
-    private val border get() = if (dark) Color.rgb(43, 64, 83) else Color.rgb(226, 232, 236)
+    private val navy get() = when { israeli && dark -> Color.rgb(8, 27, 58); israeli -> Color.rgb(237, 244, 255); dark -> Color.rgb(11, 20, 36); else -> Color.rgb(245, 247, 248) }
+    private val surface get() = when { israeli && dark -> Color.rgb(16, 45, 89); israeli -> Color.WHITE; dark -> Color.rgb(23, 38, 58); else -> Color.WHITE }
+    private val foreground get() = when { israeli && dark -> Color.rgb(244, 248, 255); israeli -> Color.rgb(18, 58, 120); dark -> Color.rgb(243, 247, 250); else -> Color.rgb(23, 36, 53) }
+    private val muted get() = when { israeli && dark -> Color.rgb(185, 203, 228); israeli -> Color.rgb(70, 97, 132); dark -> Color.rgb(185, 201, 214); else -> Color.rgb(82, 98, 115) }
+    private val accent get() = when { israeli && dark -> Color.rgb(145, 193, 255); israeli -> Color.rgb(9, 81, 184); dark -> Color.rgb(82, 219, 198); else -> Color.rgb(8, 124, 114) }
+    private val border get() = when { israeli && dark -> Color.rgb(53, 88, 143); israeli -> Color.rgb(198, 217, 245); dark -> Color.rgb(43, 64, 83); else -> Color.rgb(226, 232, 236) }
     private val amber get() = if (dark) Color.rgb(247, 186, 106) else Color.rgb(134, 84, 0)
-    private val mint = Color.rgb(45, 211, 186)
+    private val primaryFill get() = when { israeli && dark -> Color.rgb(215, 232, 255); israeli -> Color.rgb(9, 81, 184); else -> Color.rgb(45, 211, 186) }
+    private val primaryText get() = if (israeli && !dark) Color.WHITE else Color.rgb(11, 20, 36)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         lang = prefs.getString("language", "he") ?: "he"
         dark = prefs.getBoolean("dark", true)
+        israeli = prefs.getBoolean("israeli_palette", false)
         questionIndex = prefs.getInt("question_index", 0)
         val saved = JSONObject(prefs.getString("answers", "{}") ?: "{}")
         saved.keys().forEach { id ->
@@ -69,26 +76,59 @@ class MainActivity : Activity() {
             if (value in -2..2) answers[id] = VoterAnswer(value, answer.optBoolean("priority"))
         }
         data = store.load()
-        questionIndex = questionIndex.coerceIn(0, data.questions.lastIndex)
+        val storedDepth = prefs.getString("question_depth", null)
+        depth = if (!QuestionPlan.supports(data)) QuestionDepth.FULL else
+            QuestionDepth.fromId(storedDepth) ?: if (answers.isNotEmpty()) QuestionDepth.FULL else QuestionDepth.BALANCED
+        val plan = planQuestions()
+        questionIndex = if (storedDepth == null && answers.isNotEmpty()) {
+            val legacyId = data.questions.getOrNull(questionIndex)?.id
+            plan.indexOfFirst { it.id == legacyId }.coerceAtLeast(0)
+        } else questionIndex.coerceIn(0, plan.lastIndex)
+        prefs.edit().putString("question_depth", depth.id).putInt("question_index", questionIndex).apply()
         show("home")
         Thread {
             try {
                 val updated = store.refresh(data.revision)
-                if (updated != null) runOnUiThread { data = updated; show(screen, true) }
+                if (updated != null) runOnUiThread {
+                    data = updated
+                    if (!QuestionPlan.supports(data)) depth = QuestionDepth.FULL
+                    questionIndex = questionIndex.coerceIn(0, planQuestions().lastIndex)
+                    show(screen, true)
+                }
             } catch (_: Exception) { /* Valid bundled or cached data stays available offline. */ }
         }.start()
     }
 
     private fun tr(en: String, he: String, ar: String) = when (lang) { "he" -> he; "ar" -> ar; else -> en }
     private fun dp(value: Int) = (value * resources.displayMetrics.density).roundToInt()
+    private fun planQuestions() = QuestionPlan.questions(data, depth)
+    private fun planAnsweredCount() = planQuestions().count { answers.containsKey(it.id) }
+    private fun firstUnansweredIndex(): Int = planQuestions().indexOfFirst { !answers.containsKey(it.id) }.coerceAtLeast(0)
     private fun answeredCount() = data.questions.count { answers.containsKey(it.id) }
     private fun priorityCount() = data.questions.count { answers[it.id]?.priority == true }
     private fun percent(value: Double) = wrapped("${(value * 100).roundToInt()}%")
     private fun wrapped(value: String) = BidiFormatter.getInstance(lang != "en").unicodeWrap(value)
     private fun goToQuestion(index: Int) {
-        questionIndex = index.coerceIn(0, data.questions.lastIndex)
+        questionIndex = index.coerceIn(0, planQuestions().lastIndex)
         prefs.edit().putInt("question_index", questionIndex).apply()
         show("question")
+    }
+    private fun setDepth(next: QuestionDepth, openQuestion: Boolean = false) {
+        if (!QuestionPlan.supports(data)) return
+        depth = next
+        questionIndex = firstUnansweredIndex()
+        prefs.edit().putString("question_depth", depth.id).putInt("question_index", questionIndex).apply()
+        if (openQuestion) goToQuestion(questionIndex) else show("home", true)
+    }
+    private fun depthName(value: QuestionDepth) = when (value) {
+        QuestionDepth.QUICK -> tr("Quick", "מהיר", "سريع")
+        QuestionDepth.BALANCED -> tr("Balanced", "מאוזן", "متوازن")
+        QuestionDepth.FULL -> tr("Full", "מלא", "كامل")
+    }
+    private fun depthDescription() = when (depth) {
+        QuestionDepth.QUICK -> tr("A broad first look · about 3 minutes", "מבט ראשוני רחב · כ־3 דקות", "نظرة أولية واسعة · نحو 3 دقائق")
+        QuestionDepth.BALANCED -> tr("More policy detail · about 4 minutes", "יותר פירוט מדיני · כ־4 דקות", "تفاصيل سياسية أكثر · نحو 4 دقائق")
+        QuestionDepth.FULL -> tr("Every policy question · about 5 minutes", "כל שאלות המדיניות · כ־5 דקות", "جميع أسئلة السياسات · نحو 5 دقائق")
     }
     private fun saveAnswers() {
         val objectValue = JSONObject()
@@ -99,6 +139,9 @@ class MainActivity : Activity() {
     private fun box(color: Int, radius: Int = 18): GradientDrawable = GradientDrawable().apply {
         setColor(color); cornerRadius = dp(radius).toFloat(); setStroke(dp(1), border)
     }
+
+    private fun touchBackground(color: Int, radius: Int = 14): RippleDrawable =
+        RippleDrawable(ColorStateList.valueOf(Color.argb(48, Color.red(foreground), Color.green(foreground), Color.blue(foreground))), box(color, radius), null)
 
     private fun text(value: String, size: Float = 16f, color: Int = foreground, bold: Boolean = false): TextView = TextView(this).apply {
         this.text = value
@@ -121,8 +164,8 @@ class MainActivity : Activity() {
         text = label
         isAllCaps = false
         textSize = 15f
-        setTextColor(if (primary) Color.rgb(11, 20, 36) else this@MainActivity.foreground)
-        background = box(if (primary) mint else surface, 14)
+        setTextColor(if (primary) primaryText else this@MainActivity.foreground)
+        background = touchBackground(if (primary) primaryFill else surface)
         stateListAnimator = null
         elevation = 0f
         minHeight = dp(52)
@@ -156,6 +199,7 @@ class MainActivity : Activity() {
 
     private fun show(target: String, keepScroll: Boolean = false) {
         val previousScroll = if (keepScroll && ::scroll.isInitialized) scroll.scrollY else 0
+        val previousScreen = screen
         screen = target
         window.statusBarColor = navy
         window.navigationBarColor = navy
@@ -196,6 +240,12 @@ class MainActivity : Activity() {
         }
         if (target == "question") renderQuestionFooter()
         if (previousScroll > 0) scroll.post { scroll.scrollTo(0, previousScroll) }
+        val animationScale = Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
+        if (!keepScroll && (target != previousScreen || target == "question") && animationScale > 0f) {
+            body.alpha = 0f
+            body.translationY = dp(8).toFloat()
+            body.animate().alpha(1f).translationY(0f).setDuration((180f * animationScale).toLong().coerceAtMost(450L)).start()
+        }
     }
 
     private fun renderHeader() {
@@ -219,6 +269,21 @@ class MainActivity : Activity() {
         }
         themeButton.contentDescription = tr("Change color theme", "שינוי ערכת צבעים", "تغيير المظهر")
         row.addView(themeButton, LinearLayout.LayoutParams(dp(54), dp(48)).apply { marginStart = dp(6) })
+        val paletteButton = ImageView(this).apply {
+            setImageResource(R.drawable.ic_star_of_david)
+            setColorFilter(if (israeli) primaryText else accent)
+            background = touchBackground(if (israeli) primaryFill else surface)
+            setPadding(dp(11), dp(11), dp(11), dp(11))
+            isClickable = true
+            isFocusable = true
+            contentDescription = if (israeli) tr("Turn off Israeli blue and white palette", "כיבוי ערכת הצבעים הישראלית בכחול ולבן", "إيقاف لوحة الألوان الإسرائيلية الزرقاء والبيضاء") else tr("Turn on Israeli blue and white palette", "הפעלת ערכת הצבעים הישראלית בכחול ולבן", "تشغيل لوحة الألوان الإسرائيلية الزرقاء والبيضاء")
+            setOnClickListener {
+                israeli = !israeli
+                prefs.edit().putBoolean("israeli_palette", israeli).apply()
+                show(screen, true)
+            }
+        }
+        row.addView(paletteButton, LinearLayout.LayoutParams(dp(48), dp(48)).apply { marginStart = dp(6) })
     }
 
     private fun chooseLanguage() {
@@ -239,12 +304,37 @@ class MainActivity : Activity() {
             "גלו היכן העמדות שלכם תואמות לעמדות מדיניות מתועדות.",
             "اكتشف أين تتوافق آراؤك مع مواقف سياسية موثّقة."
         ), 17f, muted, top = 12)
-        addText(body, tr("18 questions · about 5 minutes · private on this device", "18 שאלות · כ־5 דקות · פרטי במכשיר הזה", "18 سؤالًا · نحو 5 دقائق · خاص على هذا الجهاز"), 14f, accent, true, 20)
-        val count = answeredCount()
-        addButton(body, if (count > 0) tr("Continue questionnaire", "המשיכו בשאלון", "تابع الاستبيان") else tr("Start questionnaire", "התחילו בשאלון", "ابدأ الاستبيان"), true, 23) {
-            goToQuestion(if (count > 0) questionIndex else 0)
+        addText(body, tr("Choose your comparison depth", "בחרו את עומק ההשוואה", "اختر مستوى تفصيل المقارنة"), 17f, foreground, true, 24)
+        if (QuestionPlan.supports(data)) {
+            val options = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
+            body.addView(options, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(9) })
+            QuestionDepth.entries.forEach { option ->
+                val selected = depth == option
+                val label = "${depthName(option)} · ${option.questionCount}"
+                val control = button(label, selected) { setDepth(option) }.apply {
+                    textSize = 13f
+                    contentDescription = tr(
+                        "${depthName(option)}, ${option.questionCount} questions${if (selected) ", selected" else ""}",
+                        "${depthName(option)}, ${option.questionCount} שאלות${if (selected) ", נבחר" else ""}",
+                        "${depthName(option)}، ${option.questionCount} سؤالًا${if (selected) "، محدد" else ""}"
+                    )
+                }
+                options.addView(control, LinearLayout.LayoutParams(0, dp(54), 1f).apply { marginEnd = dp(5) })
+            }
         }
-        if (count > 0) addText(body, tr("$count of ${data.questions.size} answered · saved automatically", "נענו $count מתוך ${data.questions.size} · נשמר אוטומטית", "أُجيب عن $count من ${data.questions.size} · حُفظ تلقائيًا"), 13f, muted, top = 8)
+        addText(body, depthDescription(), 14f, accent, true, 10)
+        addText(body, tr("More answers can give a fuller comparison; source coverage still matters.", "יותר תשובות עשויות לתת השוואה מלאה יותר; גם כיסוי המקורות חשוב.", "قد تعطي الإجابات الإضافية مقارنة أشمل؛ وتظل تغطية المصادر مهمة."), 13f, muted, top = 5)
+        val count = answeredCount()
+        val planAnswered = planAnsweredCount()
+        addButton(body, if (planAnswered == planQuestions().size) tr("Review my answers", "עיון בתשובות שלי", "راجع إجاباتي") else if (count > 0) tr("Continue questionnaire", "המשיכו בשאלון", "تابع الاستبيان") else tr("Start questionnaire", "התחילו בשאלון", "ابدأ الاستبيان"), true, 23) {
+            goToQuestion(if (planAnswered == planQuestions().size) 0 else firstUnansweredIndex())
+        }
+        if (count > 0) addText(body, tr(
+            "$planAnswered of ${planQuestions().size} in this depth · $count answer${if (count == 1) "" else "s"} saved in total",
+            "נענו $planAnswered מתוך ${planQuestions().size} במסלול הזה · ${if (count == 1) "תשובה אחת נשמרה" else "$count תשובות נשמרו"} בסך הכול",
+            "أُجيب عن $planAnswered من ${planQuestions().size} في هذا المستوى · حُفظت $count إجابات إجمالًا"
+        ), 13f, muted, top = 8)
+        else addText(body, tr("Private on this device · answers save automatically", "פרטי במכשיר הזה · התשובות נשמרות אוטומטית", "خاص على هذا الجهاز · تُحفظ الإجابات تلقائيًا"), 13f, muted, top = 8)
         if (count >= 8) addButton(body, tr("View my matches", "הצגת ההתאמות שלי", "عرض التوافقات")) { show("results") }
         addText(body, tr("Explore", "לגלות", "استكشف"), 19f, foreground, true, 30)
         addButton(body, tr("Browse election lists", "עיון ברשימות", "تصفّح القوائم")) { show("lists") }
@@ -259,17 +349,18 @@ class MainActivity : Activity() {
     }
 
     private fun renderQuestion() {
-        val q = data.questions[questionIndex]
-        addText(body, tr("Question ${questionIndex + 1} / ${data.questions.size}", "שאלה ${questionIndex + 1} / ${data.questions.size}", "السؤال ${questionIndex + 1} / ${data.questions.size}"), 14f, accent, true, 8)
+        val plan = planQuestions()
+        val q = plan[questionIndex]
+        addText(body, tr("${depthName(depth)} · Question ${questionIndex + 1} / ${plan.size}", "${depthName(depth)} · שאלה ${questionIndex + 1} / ${plan.size}", "${depthName(depth)} · السؤال ${questionIndex + 1} / ${plan.size}"), 14f, accent, true, 8)
         val progress = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal).apply {
-            max = data.questions.size
+            max = plan.size
             this.progress = questionIndex + 1
             progressTintList = android.content.res.ColorStateList.valueOf(accent)
             progressBackgroundTintList = android.content.res.ColorStateList.valueOf(border)
-            contentDescription = tr("Question ${questionIndex + 1} of ${data.questions.size}", "שאלה ${questionIndex + 1} מתוך ${data.questions.size}", "السؤال ${questionIndex + 1} من ${data.questions.size}")
+            contentDescription = tr("Question ${questionIndex + 1} of ${plan.size}", "שאלה ${questionIndex + 1} מתוך ${plan.size}", "السؤال ${questionIndex + 1} من ${plan.size}")
         }
         body.addView(progress, LinearLayout.LayoutParams(-1, dp(5)).apply { topMargin = dp(8) })
-        val jump = addText(body, tr("${answeredCount()} answered · Jump to question", "נענו ${answeredCount()} · מעבר לשאלה", "أُجيب عن ${answeredCount()} · انتقل إلى سؤال"), 13f, muted, top = 8)
+        val jump = addText(body, tr("${planAnsweredCount()} answered here · Jump to question", "נענו כאן ${planAnsweredCount()} · מעבר לשאלה", "أُجيب عن ${planAnsweredCount()} هنا · انتقل إلى سؤال"), 13f, muted, top = 8)
         jump.minHeight = dp(48)
         jump.gravity = Gravity.CENTER_VERTICAL or Gravity.START
         jump.isFocusable = true
@@ -322,7 +413,7 @@ class MainActivity : Activity() {
     }
 
     private fun showQuestionIndex() {
-        val items = data.questions.mapIndexed { index, q ->
+        val items = planQuestions().mapIndexed { index, q ->
             "${if (answers.containsKey(q.id)) "✓" else "○"}  ${index + 1}. ${q.text(lang)}"
         }.toTypedArray()
         AlertDialog.Builder(this).setTitle(tr("Questions", "השאלות", "الأسئلة"))
@@ -342,32 +433,33 @@ class MainActivity : Activity() {
         previous.alpha = if (previous.isEnabled) 1f else .45f
         footer.addView(previous, LinearLayout.LayoutParams(0, dp(54), 1f))
         val skip = button(tr("Skip", "דילוג", "تخطَّ")) {
-            answers.remove(data.questions[questionIndex].id)
+            answers.remove(planQuestions()[questionIndex].id)
             saveAnswers()
             nextQuestion()
         }
         footer.addView(skip, LinearLayout.LayoutParams(0, dp(54), .8f).apply { marginStart = dp(6) })
-        val last = questionIndex == data.questions.lastIndex
+        val last = questionIndex == planQuestions().lastIndex
         val next = button(if (last) tr("See matches", "הצגת התאמות", "عرض التوافقات") else tr("Next question", "השאלה הבאה", "السؤال التالي"), true) { nextQuestion() }
-        next.isEnabled = answers.containsKey(data.questions[questionIndex].id)
+        next.isEnabled = answers.containsKey(planQuestions()[questionIndex].id)
         next.alpha = if (next.isEnabled) 1f else .45f
         footer.addView(next, LinearLayout.LayoutParams(0, dp(54), 1.6f).apply { marginStart = dp(6) })
     }
 
     private fun nextQuestion() {
-        if (questionIndex < data.questions.lastIndex) goToQuestion(questionIndex + 1) else show("results")
+        if (questionIndex < planQuestions().lastIndex) goToQuestion(questionIndex + 1) else show("results")
     }
 
     private fun renderResults() {
         val count = answeredCount()
         addText(body, tr("Your policy matches", "ההתאמות המדיניות שלכם", "توافقك مع السياسات"), 27f, foreground, true, 12)
         addText(body, tr("$count of ${data.questions.size} answered · ${priorityCount()} priorities", "נענו $count מתוך ${data.questions.size} · ${priorityCount()} נושאים חשובים", "أُجيب عن $count من ${data.questions.size} · ${priorityCount()} أولويات"), 14f, muted, top = 7)
+        addText(body, tr("${depthName(depth)} depth · ${planAnsweredCount()} of ${planQuestions().size} in this path", "מסלול ${depthName(depth)} · ${planAnsweredCount()} מתוך ${planQuestions().size} במסלול", "المستوى ${depthName(depth)} · ${planAnsweredCount()} من ${planQuestions().size} في هذا المسار"), 13f, accent, top = 4)
         if (count < 8) {
             card(body) { c ->
                 addText(c, tr("A few more answers will make the comparison useful.", "עוד כמה תשובות יעזרו להשוות בין הרשימות.", "بعض الإجابات الإضافية ستجعل المقارنة مفيدة."), 18f, foreground, true)
                 addText(c, tr("Answer at least 8 questions to see ranked matches.", "ענו על 8 שאלות לפחות כדי לראות התאמות מדורגות.", "أجب عن 8 أسئلة على الأقل لرؤية التوافقات المرتبة."), 14f, muted, top = 8)
             }
-            addButton(body, tr("Continue questionnaire", "המשיכו בשאלון", "تابع الاستبيان"), true) { goToQuestion(questionIndex) }
+            addButton(body, tr("Answer another question", "ענו על שאלה נוספת", "أجب عن سؤال آخر"), true) { goToQuestion(firstUnansweredIndex()) }
             return
         }
         addText(body, tr("A score shows agreement on answered issues with documented positions. It is not a voting recommendation.", "הציון מציג הסכמה בנושאים שעניתם עליהם ושיש לגביהם עמדה מתועדת. זו אינה המלצת הצבעה.", "تعرض الدرجة التوافق في المسائل التي أجبت عنها ولها موقف موثّق. وهي ليست توصية بالتصويت."), 14f, muted, top = 12)
@@ -396,6 +488,15 @@ class MainActivity : Activity() {
             showUnranked = !showUnranked; show("results", true)
         }
         if (showUnranked) unranked.forEach { resultCard(it, null) }
+        val nextDepth = when (depth) {
+            QuestionDepth.QUICK -> QuestionDepth.BALANCED
+            QuestionDepth.BALANCED -> QuestionDepth.FULL
+            QuestionDepth.FULL -> null
+        }
+        if (nextDepth != null && QuestionPlan.supports(data)) {
+            addText(body, tr("A longer path can show more of your policy views; documented coverage still limits each score.", "מסלול ארוך יותר עשוי לשקף יותר מהעמדות שלכם; כיסוי המקורות עדיין מגביל כל ציון.", "قد يعكس المسار الأطول مزيدًا من آرائك؛ وما زالت تغطية المصادر تحدّ كل درجة."), 13f, muted, top = 24)
+            addButton(body, tr("Add ${nextDepth.questionCount - depth.questionCount} questions · ${depthName(nextDepth)}", "עוד ${nextDepth.questionCount - depth.questionCount} שאלות · ${depthName(nextDepth)}", "أضف ${nextDepth.questionCount - depth.questionCount} أسئلة · ${depthName(nextDepth)}"), true, 10) { setDepth(nextDepth, true) }
+        }
         addButton(body, tr("Edit answers", "עריכת תשובות", "تعديل الإجابات"), top = 20) { goToQuestion(questionIndex) }
         addText(body, tr("Data updated ${data.updatedAt}. Check current official information before voting.", "המידע עודכן ${data.updatedAt}. בדקו מידע רשמי עדכני לפני ההצבעה.", "حُدّثت البيانات ${data.updatedAt}. تحقّق من المعلومات الرسمية قبل التصويت."), 13f, muted, top = 18)
     }
@@ -411,6 +512,7 @@ class MainActivity : Activity() {
         }
         tile.isClickable = true
         tile.isFocusable = true
+        tile.background = touchBackground(surface, 22)
         val spokenScore = scoreText ?: tr("unranked", "ללא דירוג", "غير مرتبة")
         tile.contentDescription = tr(
             "${result.list.name(lang)}, $spokenScore alignment, ${percent(result.coverage)} evidence coverage. Compare positions.",

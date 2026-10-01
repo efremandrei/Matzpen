@@ -4,15 +4,16 @@ An Android voter guide for Israel's 26th Knesset election. It compares a voter's
 
 ## What it does
 
-- 18 policy questions in Hebrew, Arabic, and English; five answer levels, skips, and up to three double-weight priorities.
+- Three nested questionnaire depths: Quick (10 questions), Balanced (14), and Full (18). All questions support Hebrew, Arabic, and English, five answer levels, skips, and up to three double-weight priorities. Answers carry forward when changing depth.
 - Ranks lists after eight answers when supported positions cover at least 70% of the voter's weighted answers. Every list remains browseable, including lists without enough evidence to rank.
 - Displays the source, source date, and evidence coverage for each result. Lists under court review are identified.
 - Keeps answers on the device. There is no account, analytics, or answer upload.
 - Loads a bundled election snapshot offline and accepts only newer, correctly signed public feed revisions.
-- Defaults to dark mode while preserving the user's language and theme choices.
+- Defaults to dark mode. The sun/moon control switches brightness, and the adjacent Star of David switches to a blue-and-white Israeli palette; both choices are saved independently.
+- Uses subtle screen transitions and touch ripples, following Android's animation-duration setting.
 - Provides a question index, saved progress, searchable list browsing, compact ranked and unranked results, and a source-backed comparison of each answer.
 
-The [design overview](DESIGN_OVERVIEW.md) documents the visual direction and UX principles behind the 1.1 redesign.
+The [design overview](DESIGN_OVERVIEW.md) documents the visual direction and UX principles behind the app.
 
 ## Data provenance
 
@@ -42,4 +43,4 @@ GitHub Pages serves `docs/feed/manifest.json`, `manifest.sig`, and `content.json
 
 ## Project status
 
-Version 1.1.0 is a source-backed pre-election preview. The redesigned build has been installed and visually checked on an Android 35 emulator. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
+Version 1.2.0 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.

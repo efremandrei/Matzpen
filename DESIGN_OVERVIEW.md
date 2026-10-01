@@ -1,12 +1,18 @@
 # Matzpen design overview
 
-Status: design direction, 1 October 2026. The 1.1.0 implementation covers the main journey, visual tokens, language picker, comparison screens, and launcher icon. Motion and independent editorial review remain future work.
+Status: design direction, 1 October 2026. The 1.2.0 implementation adds three questionnaire depths, a selectable Israeli palette, and restrained motion. Independent editorial review remains future work.
 
 ## Product promise
 
 Help a voter understand where their policy views overlap with documented positions of election lists, then make it easy to inspect the evidence. The experience should feel calm, impartial, and trustworthy. It must never imply that a match score is an instruction to vote for a list.
 
-**Design idea: a modern civic compass.** Use the compass as a quiet wayfinding motif: a fine radial line, a small north-point mark, and directional transitions. Avoid patriotic imagery, party colors, celebratory ranking effects, or visuals that privilege a list.
+**Design idea: a modern civic compass.** Use the compass as a quiet wayfinding motif: a fine radial line, a small north-point mark, and directional transitions. The optional blue-and-white palette uses a Star of David control and applies to the whole interface; list cards remain visually neutral, without celebratory ranking effects or visuals that privilege a list.
+
+## Questionnaire depth and skin controls
+
+The welcome screen offers Quick (10), Balanced (14), and Full (18). The paths are nested so choosing a longer one keeps existing answers and adds four questions at a time. All scores use the answers saved across paths. More answers can reflect more of a voter's views, while documentation gaps still limit ranking. The interface describes this as comparison depth rather than a guarantee of accuracy.
+
+The top bar has separate brightness and palette controls. The sun/moon button changes dark or light, while the adjacent Star of David applies blue and white in either brightness. Both preferences persist. Blue is reserved for navigation and selection, never used to imply support for any list. Buttons and result cards use touch ripples; screen changes use a short fade and rise, disabled when Android's animation scale is zero.
 
 ## What the current app gets right
 
