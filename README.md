@@ -1,41 +1,41 @@
-# Matzpen / מצפן בחירות
+# מצפן בחירות
 
-An Android voter guide for Israel's 26th Knesset election. It compares a voter's answers to **documented policy positions** of submitted lists. It does not endorse a list, predict results, or use polls in scoring.
+מצפן בחירות היא אפליקציית Android המסייעת לבוחרים בישראל להשוות בין עמדותיהם לבין **עמדות מדיניות מתועדות** של רשימות שהוגשו לבחירות לכנסת ה־26. האפליקציה אינה ממליצה להצביע לרשימה מסוימת, אינה חוזה תוצאות ואינה משתמשת בסקרים לצורך חישוב ההתאמה.
 
-## What it does
+## מה אפשר לעשות באפליקציה
 
-- Three nested questionnaire depths: Quick (10 questions), Balanced (14), and Full (18). All questions support Hebrew, Arabic, and English, five answer levels, skips, and up to three double-weight priorities. Answers carry forward when changing depth.
-- Ranks lists after eight answers when supported positions cover at least 70% of the voter's weighted answers. Every list remains browseable, including lists without enough evidence to rank.
-- Displays the source, source date, and evidence coverage for each result. Lists under court review are identified.
-- Keeps answers on the device. There is no account, analytics, or answer upload.
-- Loads a bundled election snapshot offline and accepts only newer, correctly signed public feed revisions.
-- Defaults to dark mode. Three compact icon controls select Light (sun), Dark (moon), or Blue & white (Star of David); one choice is saved at a time beside the language picker.
-- Uses short, separate statements on the main screens so interface copy stays readable on narrow phones and in RTL languages.
-- Opens with a branded splash screen and a matching Star of David compass launcher icon; the same mark appears in the app header.
-- Uses a compass-logo splash exit, short screen transitions, and touch ripples, following Android's animation-duration setting.
-- Provides a question index, saved progress, searchable list browsing, compact ranked and unranked results, and a source-backed comparison of each answer.
+- לבחור אורך שאלון: מהיר (10 שאלות), מאוזן (14) או מלא (18). השאלות זמינות בעברית, בערבית ובאנגלית, עם חמש דרגות תשובה, אפשרות לדלג ועד שלוש תשובות בעדיפות כפולה. תשובות קיימות נשמרות במעבר בין אורכי השאלון.
+- לראות דירוג רשימות לאחר מענה על שמונה שאלות, כאשר קיימות עמדות מתועדות המכסות לפחות 70% ממשקל התשובות. אפשר לעיין בכל הרשימות, גם כשאין די מידע כדי לדרג אותן.
+- לבדוק עבור כל תוצאה את המקור, תאריך המקור והיקף העמדות המתועדות. רשימות שמעמדן נתון להכרעת בית המשפט מסומנות בהתאם.
+- לשמור את התשובות במכשיר. אין צורך בחשבון, והאפליקציה אינה כוללת ניתוח שימוש או שליחת תשובות.
+- להשתמש בנתוני הבחירות המצורפים גם ללא חיבור לרשת. עדכונים מתקבלים רק כאשר הם חדשים יותר וחתימתם הדיגיטלית תקינה.
+- לבחור בין ערכת עיצוב בהירה, כהה או כחול־לבן באמצעות שלושה אייקונים לצד בחירת השפה. הבחירה נשמרת, וברירת המחדל בהתקנה חדשה היא ערכה כהה.
+- לקרוא מסכים עם משפטים קצרים וברורים, גם בטלפונים צרים ובשפות הנכתבות מימין לשמאל.
+- לפתוח את האפליקציה עם מסך פתיחה ממותג ואייקון מצפן עם מגן דוד, המופיע גם בכותרת האפליקציה.
+- ליהנות מאנימציית פתיחה, מעברים בין מסכים ואפקטי מגע המתחשבים בהגדרות האנימציה של Android.
+- לנווט בין שאלות, להמשיך מהתקדמות שמורה, לחפש רשימות, לעיין בתוצאות מדורגות ולא מדורגות ולהשוות תשובות מול מקורות.
 
-The [design overview](DESIGN_OVERVIEW.md) documents the visual direction and UX principles behind the app.
+[סקירת העיצוב](DESIGN_OVERVIEW.md) מפרטת את הכיוון החזותי ואת עקרונות חוויית המשתמש.
 
-## Home screen
+## מסך הבית
 
-Android 15 emulator screenshots in the Blue & white theme:
+צילומי מסך מאמולטור Android 15, בערכת הצבעים כחול־לבן:
 
 | עברית | العربية | English |
 |:---:|:---:|:---:|
-| <img src="docs/screenshots/home-he.png" alt="Matzpen home screen in Hebrew" width="260"> | <img src="docs/screenshots/home-ar.png" alt="Matzpen home screen in Arabic" width="260"> | <img src="docs/screenshots/home-en.png" alt="Matzpen home screen in English" width="260"> |
+| <img src="docs/screenshots/home-he.png" alt="מסך הבית בעברית" width="260"> | <img src="docs/screenshots/home-ar.png" alt="מסך הבית בערבית" width="260"> | <img src="docs/screenshots/home-en.png" alt="מסך הבית באנגלית" width="260"> |
 
-## Data provenance
+## מקור הנתונים ושיטת ההתאמה
 
-The bundled snapshot is adapted from [מצפן הבחירה 2026](https://bhirot26.online), [open dataset](https://github.com/dangelm/bhirot26-election-data), revision `4b304f9983f981992ecaf5a66cfc597155745d85` (dataset version 2026-09-30), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). See [DATA_LICENSE.md](DATA_LICENSE.md) for changes and attribution.
+צילום המצב המצורף לאפליקציה עובד מתוך [מצפן הבחירה 2026](https://bhirot26.online) ו[מאגר הנתונים הפתוח](https://github.com/dangelm/bhirot26-election-data), בגרסה `4b304f9983f981992ecaf5a66cfc597155745d85` מתאריך 2026-09-30, תחת רישיון [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). פירוט השינויים והקרדיט מופיעים בקובץ [DATA_LICENSE.md](DATA_LICENSE.md).
 
-The app includes the first 18 policy questions from the upstream set and excludes its two coalition-strategy questions. Positions supported only by third-party reporting are excluded from scoring. A sourced party position can be against (-2), partial/conditional (0), or for (2), while voter answers run from -2 to 2. Unknown and excluded positions do not contribute to the score or coverage. The score is the weighted average of `100 × (1 − |voter − party| / 4)` over supported answered questions. Each priority gets weight 2; all others get weight 1. The score is shown only after eight answers and at least 70% weighted evidence coverage. Equal scores share a rank.
+האפליקציה משתמשת ב־18 שאלות המדיניות הראשונות במאגר המקורי, ומחריגה שתי שאלות העוסקות באסטרטגיה קואליציונית. עמדות המבוססות רק על דיווח של צד שלישי אינן נכללות בחישוב. עמדה מתועדת של רשימה יכולה להיות נגד (‎-2), חלקית או מותנית (0), או בעד (2); תשובות הבוחרים נעות בין ‎-2 ל־2. עמדות לא ידועות או מוחרגות אינן משפיעות על הציון או על שיעור הכיסוי. הציון הוא ממוצע משוקלל של `100 × (1 − |תשובת הבוחר − עמדת הרשימה| / 4)` על פני השאלות שנענו ושיש להן עמדה מתועדת. תשובה שסומנה בעדיפות מקבלת משקל 2, וכל תשובה אחרת משקל 1. הציון מוצג רק לאחר שמונה תשובות וכיסוי מקורות משוקלל של לפחות 70%. רשימות בעלות ציון זהה חולקות אותו דירוג.
 
-This is a dated snapshot. Ballot status and party positions can change. The source links and current official election information should be checked before voting.
+הנתונים משקפים מועד מסוים בלבד. מעמד הרשימות ועמדותיהן עשויים להשתנות. לפני ההצבעה יש לבדוק את קישורי המקורות ואת המידע הרשמי העדכני.
 
-## Build
+## בנייה
 
-Requires JDK 21 and Android SDK 35. On Windows:
+נדרשים JDK 21 ו־Android SDK 35. ב־Windows:
 
 ```powershell
 $env:JAVA_HOME = 'C:\Program Files\Java\jdk-21'
@@ -43,14 +43,14 @@ $env:ANDROID_HOME = "$env:LOCALAPPDATA\Android\Sdk"
 .\gradlew.bat assembleDebug testDebugUnitTest
 ```
 
-To refresh the source snapshot intentionally, update the pinned upstream commit and translations in `scripts/build_content.py`, review the changes, increment both dataset revision and app version, run `python scripts/build_content.py`, then `python scripts/sign_feed.py`. Never publish an unsigned or unreviewed feed.
+כדי לעדכן את צילום מצב הנתונים באופן מבוקר, יש לעדכן את מזהה ה־commit המקורי ואת התרגומים בקובץ `scripts/build_content.py`, לבדוק את השינויים, להעלות את גרסת הנתונים ואת גרסת האפליקציה, להריץ `python scripts/build_content.py` ולאחר מכן `python scripts/sign_feed.py`. אין לפרסם נתונים שלא נבדקו או שאינם חתומים.
 
-For a locally signed release, run `scripts/build_release.ps1`. The release keystore and DPAPI-protected password live outside the repository in `%USERPROFILE%\.android\keystores`. **Back up the keystore and its password securely**. All app updates must retain `com.efremandrei.matzpen`, the same signing key, and an increasing `versionCode`.
+לבניית גרסה חתומה מקומית, יש להריץ `scripts/build_release.ps1`. קובץ החתימה והסיסמה המוגנת באמצעות DPAPI נמצאים מחוץ למאגר, בתיקייה `%USERPROFILE%\.android\keystores`. **יש לשמור גיבוי מאובטח של קובץ החתימה והסיסמה שלו.** עדכון האפליקציה חייב לשמור על מזהה החבילה `com.efremandrei.matzpen`, על אותו מפתח חתימה ועל `versionCode` גבוה יותר.
 
-## Public feed
+## עדכוני נתונים ציבוריים
 
-GitHub Pages serves `docs/feed/manifest.json`, `manifest.sig`, and `content.json`. The app pins the feed public key, verifies ECDSA P-256 signatures and content SHA-256, rejects older revisions, and keeps the last valid copy. The private feed key lives outside the repository.
+GitHub Pages מגיש את הקבצים `docs/feed/manifest.json`, `manifest.sig` ו־`content.json`. האפליקציה משתמשת במפתח ציבורי שמוטמע בה כדי לאמת חתימת ECDSA P-256 ואת ערך SHA-256 של התוכן, דוחה גרסאות נתונים ישנות יותר ושומרת את העותק התקין האחרון. המפתח הפרטי לחתימת הנתונים נמצא מחוץ למאגר.
 
-## Project status
+## מצב הפרויקט
 
-Version 1.6.1 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
+גרסה 1.6.1 היא גרסת תצוגה מקדימה לקראת הבחירות, המבוססת על מקורות מתועדים. האפליקציה טרם נבדקה במכשיר Samsung פיזי. לפני הפצה רחבה נדרשת בדיקה עצמאית של תרגומי השאלות ועדכוני נתוני הבחירות.
