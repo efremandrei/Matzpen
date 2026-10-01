@@ -1,6 +1,6 @@
 # Matzpen design overview
 
-Status: design direction, 1 October 2026. The 1.3.0 implementation adds a branded splash and a Star of David compass icon to the existing questionnaire depths, selectable Israeli palette, and restrained motion. Independent editorial review remains future work.
+Status: design direction, 1 October 2026. The 1.4.0 implementation clarifies the three theme controls and tightens screen copy alongside the branded splash, Star of David compass icon, questionnaire depths, and restrained motion. Independent editorial review remains future work.
 
 ## Product promise
 
@@ -12,7 +12,9 @@ Help a voter understand where their policy views overlap with documented positio
 
 The welcome screen offers Quick (10), Balanced (14), and Full (18). The paths are nested so choosing a longer one keeps existing answers and adds four questions at a time. All scores use the answers saved across paths. More answers can reflect more of a voter's views, while documentation gaps still limit ranking. The interface describes this as comparison depth rather than a guarantee of accuracy.
 
-The top bar has separate brightness and palette controls. The sun/moon button changes dark or light, while the adjacent Star of David applies blue and white in either brightness. Both preferences persist. Blue is reserved for navigation and selection, never used to imply support for any list. Buttons and result cards use touch ripples; screen changes use a short fade and rise, disabled when Android's animation scale is zero.
+The header has three explicit, mutually exclusive choices. Sun selects the light palette, moon selects dark, and the Star of David selects a blue-and-white palette. The selected button stays highlighted and persists across launches. Blue is reserved for navigation and selection, never used to imply support for any list. Buttons and result cards use touch ripples; screen changes use a short fade and rise, disabled when Android's animation scale is zero.
+
+Main-screen copy uses brief, separate statements and compact metadata. Complete questionnaire questions and source excerpts remain readable, with natural wrapping where their full wording needs more space.
 
 The launch mark combines a light-blue compass ring, four bearing ticks, a white six-pointed star, and a small north/south needle on a deep-blue field. The same vector supplies the adaptive launcher foreground, system splash, and header brand mark. The splash closes as soon as the home screen is ready; no artificial delay is added.
 

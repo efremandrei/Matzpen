@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.4.0 — 2026-10-01
+
+- Replaced the combined brightness toggle and palette toggle with three explicit, mutually exclusive theme buttons: sun for Light, moon for Dark, and Star of David for Blue & white.
+- Migrated saved color preferences into the new single theme setting without changing questionnaire answers.
+- Shortened main-screen copy and separated statements to avoid awkward mid-sentence wrapping on phone screens.
+
 ## 1.3.0 — 2026-10-01
 
 - Added a branded launch splash screen using Android's splash screen compatibility library.

@@ -9,7 +9,8 @@ An Android voter guide for Israel's 26th Knesset election. It compares a voter's
 - Displays the source, source date, and evidence coverage for each result. Lists under court review are identified.
 - Keeps answers on the device. There is no account, analytics, or answer upload.
 - Loads a bundled election snapshot offline and accepts only newer, correctly signed public feed revisions.
-- Defaults to dark mode. The sun/moon control switches brightness, and the adjacent Star of David switches to a blue-and-white Israeli palette; both choices are saved independently.
+- Defaults to dark mode. Three separate controls select Light (sun), Dark (moon), or Blue & white (Star of David); one choice is saved at a time.
+- Uses short, separate statements on the main screens so interface copy stays readable on narrow phones and in RTL languages.
 - Opens with a branded splash screen and a matching Star of David compass launcher icon; the same mark appears in the app header.
 - Uses subtle screen transitions and touch ripples, following Android's animation-duration setting.
 - Provides a question index, saved progress, searchable list browsing, compact ranked and unranked results, and a source-backed comparison of each answer.
@@ -44,4 +45,4 @@ GitHub Pages serves `docs/feed/manifest.json`, `manifest.sig`, and `content.json
 
 ## Project status
 
-Version 1.3.0 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
+Version 1.4.0 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
