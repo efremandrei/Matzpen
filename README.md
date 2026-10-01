@@ -17,6 +17,14 @@ An Android voter guide for Israel's 26th Knesset election. It compares a voter's
 
 The [design overview](DESIGN_OVERVIEW.md) documents the visual direction and UX principles behind the app.
 
+## Home screen
+
+Android 15 emulator screenshots in the Blue & white theme:
+
+| עברית | العربية | English |
+|:---:|:---:|:---:|
+| <img src="docs/screenshots/home-he.png" alt="Matzpen home screen in Hebrew" width="260"> | <img src="docs/screenshots/home-ar.png" alt="Matzpen home screen in Arabic" width="260"> | <img src="docs/screenshots/home-en.png" alt="Matzpen home screen in English" width="260"> |
+
 ## Data provenance
 
 The bundled snapshot is adapted from [מצפן הבחירה 2026](https://bhirot26.online), [open dataset](https://github.com/dangelm/bhirot26-election-data), revision `4b304f9983f981992ecaf5a66cfc597155745d85` (dataset version 2026-09-30), under [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/). See [DATA_LICENSE.md](DATA_LICENSE.md) for changes and attribution.
