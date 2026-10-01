@@ -73,7 +73,9 @@ class MainActivity : Activity() {
             if (scale == 0f) {
                 provider.remove()
             } else {
-                provider.iconView.apply {
+                // Installer launches can hand over a splash without an icon view.
+                // The compat getter throws in that case; the fade still runs.
+                runCatching { provider.iconView }.getOrNull()?.apply {
                     rotation = -18f
                     scaleX = 0.88f
                     scaleY = 0.88f

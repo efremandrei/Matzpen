@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.6.1 — 2026-10-01
+
+- Fixed a crash when launching directly from the installer’s Open button on devices that provide no splash icon view.
+- Kept the splash fade and animated the compass icon when Android supplies it.
+
 ## 1.6.0 — 2026-10-01
 
 - Added a visible compass-logo exit animation to the system splash screen before the home screen appears.

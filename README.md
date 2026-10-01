@@ -45,4 +45,4 @@ GitHub Pages serves `docs/feed/manifest.json`, `manifest.sig`, and `content.json
 
 ## Project status
 
-Version 1.6.0 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
+Version 1.6.1 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
