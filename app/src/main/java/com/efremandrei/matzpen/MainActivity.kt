@@ -19,6 +19,7 @@ import android.view.Gravity
 import android.view.View
 import android.view.WindowInsets
 import android.view.WindowInsetsController
+import android.view.animation.DecelerateInterpolator
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
@@ -65,8 +66,27 @@ class MainActivity : Activity() {
     private val primaryText get() = if (theme == ThemeMode.ISRAELI) Color.WHITE else Color.rgb(11, 20, 36)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
+        val splash = installSplashScreen()
         super.onCreate(savedInstanceState)
+        splash.setOnExitAnimationListener { provider ->
+            val scale = Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f).coerceIn(0f, 2f)
+            if (scale == 0f) {
+                provider.remove()
+            } else {
+                provider.iconView.apply {
+                    rotation = -18f
+                    scaleX = 0.88f
+                    scaleY = 0.88f
+                    animate().rotation(0f).scaleX(1f).scaleY(1f)
+                        .setInterpolator(DecelerateInterpolator())
+                        .setDuration((360f * scale).toLong()).start()
+                }
+                provider.view.animate().alpha(0f)
+                    .setStartDelay((240f * scale).toLong())
+                    .setDuration((220f * scale).toLong())
+                    .withEndAction { provider.remove() }.start()
+            }
+        }
         lang = prefs.getString("language", "he") ?: "he"
         theme = ThemeMode.restore(prefs.getString("theme_mode", null), prefs.getBoolean("dark", true), prefs.getBoolean("israeli_palette", false))
         prefs.edit().putString("theme_mode", theme.id).remove("dark").remove("israeli_palette").apply()
@@ -245,8 +265,11 @@ class MainActivity : Activity() {
         val animationScale = Settings.Global.getFloat(contentResolver, Settings.Global.ANIMATOR_DURATION_SCALE, 1f)
         if (!keepScroll && (target != previousScreen || target == "question") && animationScale > 0f) {
             body.alpha = 0f
-            body.translationY = dp(8).toFloat()
-            body.animate().alpha(1f).translationY(0f).setDuration((180f * animationScale).toLong().coerceAtMost(450L)).start()
+            if (target == "question") body.translationX = dp(if (lang == "en") 16 else -16).toFloat()
+            else body.translationY = dp(14).toFloat()
+            body.animate().alpha(1f).translationX(0f).translationY(0f)
+                .setInterpolator(DecelerateInterpolator())
+                .setDuration((280f * animationScale).toLong().coerceAtMost(560L)).start()
         }
     }
 

@@ -12,7 +12,7 @@ An Android voter guide for Israel's 26th Knesset election. It compares a voter's
 - Defaults to dark mode. Three compact icon controls select Light (sun), Dark (moon), or Blue & white (Star of David); one choice is saved at a time beside the language picker.
 - Uses short, separate statements on the main screens so interface copy stays readable on narrow phones and in RTL languages.
 - Opens with a branded splash screen and a matching Star of David compass launcher icon; the same mark appears in the app header.
-- Uses subtle screen transitions and touch ripples, following Android's animation-duration setting.
+- Uses a compass-logo splash exit, short screen transitions, and touch ripples, following Android's animation-duration setting.
 - Provides a question index, saved progress, searchable list browsing, compact ranked and unranked results, and a source-backed comparison of each answer.
 
 The [design overview](DESIGN_OVERVIEW.md) documents the visual direction and UX principles behind the app.
@@ -45,4 +45,4 @@ GitHub Pages serves `docs/feed/manifest.json`, `manifest.sig`, and `content.json
 
 ## Project status
 
-Version 1.5.0 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.
+Version 1.6.0 is a source-backed pre-election preview. A physical Samsung device has not been tested. Question translations and election updates should receive independent editorial review before broad promotion.

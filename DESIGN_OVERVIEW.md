@@ -1,6 +1,6 @@
 # Matzpen design overview
 
-Status: design direction, 1 October 2026. The 1.5.0 implementation places the compact theme icons beside the language picker, enlarges the “Election Compass” brand, and gives the home screen a two-line invitation. It also includes the branded splash, Star of David compass icon, questionnaire depths, and restrained motion. Independent editorial review remains future work.
+Status: design direction, 1 October 2026. The 1.6.0 implementation makes the compass splash and screen transitions easier to see. It retains the compact theme icons beside the language picker, larger “Election Compass” brand, two-line home invitation, and questionnaire depths. Independent editorial review remains future work.
 
 ## Product promise
 
@@ -16,7 +16,7 @@ The header gives the larger app name its own row. A second compact row holds the
 
 Main-screen copy uses brief, separate statements and compact metadata. Complete questionnaire questions and source excerpts remain readable, with natural wrapping where their full wording needs more space.
 
-The launch mark combines a light-blue compass ring, four bearing ticks, a white six-pointed star, and a small north/south needle on a deep-blue field. The same vector supplies the adaptive launcher foreground, system splash, and header brand mark. The splash closes as soon as the home screen is ready; no artificial delay is added.
+The launch mark combines a light-blue compass ring, four bearing ticks, a white six-pointed star, and a small north/south needle on a deep-blue field. The same vector supplies the adaptive launcher foreground, system splash, and header brand mark. At launch, the splash logo gently turns and settles before the splash fades to the home screen. Android's disabled-animation setting removes this motion.
 
 ## What the current app gets right
 

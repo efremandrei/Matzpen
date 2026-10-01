@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.6.0 — 2026-10-01
+
+- Added a visible compass-logo exit animation to the system splash screen before the home screen appears.
+- Made navigation transitions clearer with a longer fade and gentle movement; questionnaire screens enter horizontally.
+- Kept splash and screen motion disabled when Android's animation-duration setting is off.
+
 ## 1.5.0 — 2026-10-01
 
 - Enlarged the header and updated the visible app name to “מצפן בחירות” (Election Compass).
