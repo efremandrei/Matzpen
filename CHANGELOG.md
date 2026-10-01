@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.5.0 — 2026-10-01
+
+- Enlarged the header and updated the visible app name to “מצפן בחירות” (Election Compass).
+- Placed the language picker and three compact, icon-only theme controls on one toolbar row.
+- Replaced the home headline with a two-line invitation to take the matching questionnaire.
+
 ## 1.4.0 — 2026-10-01
 
 - Replaced the combined brightness toggle and palette toggle with three explicit, mutually exclusive theme buttons: sun for Light, moon for Dark, and Star of David for Blue & white.

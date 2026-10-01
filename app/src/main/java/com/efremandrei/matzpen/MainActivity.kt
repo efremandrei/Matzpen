@@ -22,6 +22,7 @@ import android.view.WindowInsetsController
 import android.widget.Button
 import android.widget.CheckBox
 import android.widget.EditText
+import android.widget.ImageButton
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.ProgressBar
@@ -252,59 +253,66 @@ class MainActivity : Activity() {
     private fun renderHeader() {
         val header = LinearLayout(this).apply { orientation = LinearLayout.VERTICAL }
         root.addView(header)
-        val row = LinearLayout(this).apply {
+        val brand = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
             gravity = Gravity.CENTER_VERTICAL
-            setPadding(dp(18), dp(12), dp(18), dp(6))
+            setPadding(dp(18), dp(9), dp(18), 0)
         }
-        header.addView(row)
-        row.addView(ImageView(this).apply { setImageResource(R.drawable.ic_matzpen_mark); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(34), dp(34)))
-        val title = text(tr("Matzpen", "מצפן", "بوصلة"), 21f, foreground, true)
-        row.addView(title, LinearLayout.LayoutParams(0, -2, 1f).apply { marginStart = dp(8) })
-        val languageButton = button(when (lang) { "he" -> "עברית"; "ar" -> "العربية"; else -> "English" }, false) { chooseLanguage() }
-        languageButton.textSize = 12f
-        languageButton.contentDescription = tr("Choose language", "בחירת שפה", "اختيار اللغة")
-        row.addView(languageButton, LinearLayout.LayoutParams(-2, dp(48)))
-        val themes = LinearLayout(this).apply {
+        header.addView(brand)
+        brand.addView(ImageView(this).apply { setImageResource(R.drawable.ic_matzpen_mark); importantForAccessibility = View.IMPORTANT_FOR_ACCESSIBILITY_NO }, LinearLayout.LayoutParams(dp(32), dp(32)))
+        val title = text(tr("Election Compass", "מצפן בחירות", "بوصلة الانتخابات"), 26f, foreground, true)
+        brand.addView(title, LinearLayout.LayoutParams(-2, -2).apply { marginStart = dp(9) })
+
+        val toolbar = LinearLayout(this).apply {
             orientation = LinearLayout.HORIZONTAL
-            setPadding(dp(18), dp(4), dp(18), dp(10))
+            gravity = Gravity.CENTER_VERTICAL
+            setPadding(dp(15), dp(4), dp(15), dp(6))
         }
-        header.addView(themes)
+        header.addView(toolbar)
         listOf(
             Triple(ThemeMode.LIGHT, tr("Light", "בהיר", "فاتح"), R.drawable.ic_theme_sun),
             Triple(ThemeMode.DARK, tr("Dark", "כהה", "داكن"), R.drawable.ic_theme_moon),
-            Triple(ThemeMode.ISRAELI, tr("Blue/white", "כחול ולבן", "أزرق/أبيض"), R.drawable.ic_star_of_david)
-        ).forEachIndexed { index, (mode, label, icon) ->
-            themes.addView(themeChoice(mode, label, icon), LinearLayout.LayoutParams(0, dp(64), 1f).apply {
-                if (index > 0) marginStart = dp(6)
-            })
+            Triple(ThemeMode.ISRAELI, tr("Blue and white", "כחול ולבן", "أزرق وأبيض"), R.drawable.ic_star_of_david)
+        ).forEach { (mode, label, icon) ->
+            toolbar.addView(themeChoice(mode, label, icon), LinearLayout.LayoutParams(dp(44), dp(44)))
         }
+        toolbar.addView(View(this), LinearLayout.LayoutParams(0, 1, 1f))
+        val languageButton = button(when (lang) { "he" -> "עברית"; "ar" -> "العربية"; else -> "English" }, false) { chooseLanguage() }
+        languageButton.textSize = 14f
+        languageButton.minWidth = 0
+        languageButton.minHeight = 0
+        languageButton.minimumWidth = 0
+        languageButton.minimumHeight = 0
+        languageButton.setPadding(dp(10), 0, dp(10), 0)
+        languageButton.contentDescription = tr("Choose language", "בחירת שפה", "اختيار اللغة")
+        toolbar.addView(languageButton, LinearLayout.LayoutParams(-2, dp(40)))
     }
 
-    private fun themeChoice(mode: ThemeMode, label: String, iconId: Int): Button {
+    private fun themeChoice(mode: ThemeMode, label: String, iconId: Int): ImageButton {
         val selected = theme == mode
-        val spokenLabel = if (mode == ThemeMode.ISRAELI) tr("Blue and white", "כחול ולבן", "أزرق وأبيض") else label
-        return button(label, selected) {
-            if (theme != mode) {
-                theme = mode
-                prefs.edit().putString("theme_mode", mode.id).apply()
-                show(screen, true)
-            }
-        }.apply {
-            textSize = 12f
-            isSingleLine = true
-            gravity = Gravity.CENTER
-            val icon = getDrawable(iconId)?.mutate()
-            icon?.setBounds(0, 0, dp(22), dp(22))
-            icon?.setTint(if (selected) primaryText else accent)
-            setCompoundDrawables(null, icon, null, null)
-            compoundDrawablePadding = dp(2)
+        val fill = GradientDrawable().apply {
+            shape = GradientDrawable.OVAL
+            setColor(if (selected) Color.argb(48, Color.red(accent), Color.green(accent), Color.blue(accent)) else Color.TRANSPARENT)
+        }
+        return ImageButton(this).apply {
+            setImageResource(iconId)
+            imageTintList = ColorStateList.valueOf(if (selected) accent else muted)
+            scaleType = ImageView.ScaleType.CENTER_INSIDE
+            setPadding(dp(10), dp(10), dp(10), dp(10))
+            background = RippleDrawable(ColorStateList.valueOf(accent), fill, null)
             isSelected = selected
             contentDescription = tr(
-                "$spokenLabel theme${if (selected) ", selected" else ""}",
-                "ערכת $spokenLabel${if (selected) ", נבחרה" else ""}",
-                "مظهر $spokenLabel${if (selected) "، محدد" else ""}"
+                "$label theme${if (selected) ", selected" else ""}",
+                "ערכת $label${if (selected) ", נבחרה" else ""}",
+                "مظهر $label${if (selected) "، محدد" else ""}"
             )
+            setOnClickListener {
+                if (theme != mode) {
+                    theme = mode
+                    prefs.edit().putString("theme_mode", mode.id).apply()
+                    show(screen, true)
+                }
+            }
         }
     }
 
@@ -320,8 +328,8 @@ class MainActivity : Activity() {
     }
 
     private fun renderHome() {
-        addText(body, tr("Find your match", "מצאו התאמה", "اكتشف توافقك"), 30f, foreground, true, 18)
-        addText(body, tr("Compare documented positions.", "השוו עמדות מתועדות.", "قارن المواقف الموثّقة."), 17f, muted, top = 10)
+        addText(body, tr("Unsure who to vote for?", "מתלבטים למי להצביע?", "محتارون لمن تصوّتون؟"), 28f, foreground, true, 18)
+        addText(body, tr("Find your match with a quiz", "בואו לגלות דרך שאלון התאמה", "اكتشفوا توافقكم باستبيان"), 19f, muted, top = 8)
         addText(body, tr("Questionnaire length", "אורך השאלון", "طول الاستبيان"), 17f, foreground, true, 22)
         if (QuestionPlan.supports(data)) {
             val options = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
@@ -712,7 +720,7 @@ class MainActivity : Activity() {
     }
 
     private fun renderAbout() {
-        addText(body, tr("About Matzpen", "על מצפן", "حول بوصلة"), 27f, foreground, true, 12)
+        addText(body, tr("About Election Compass", "על מצפן בחירות", "حول بوصلة الانتخابات"), 27f, foreground, true, 12)
         card(body) { c ->
             addText(c, tr("An independent policy-alignment guide. It does not endorse a party or predict election outcomes.", "כלי עצמאי להשוואת עמדות מדיניות. אינו תומך ברשימה ואינו חוזה תוצאות בחירות.", "دليل مستقل لمقارنة المواقف السياسية. لا يؤيد أي قائمة ولا يتنبأ بنتائج الانتخابات."), 16f)
             addText(c, tr("Your answers are stored only on this device. Public election content is downloaded by HTTPS; no answers or analytics are uploaded.", "התשובות נשמרות במכשיר בלבד. מידע בחירות ציבורי מתקבל ב־HTTPS; אין העלאת תשובות או נתוני שימוש.", "تُحفظ إجاباتك على هذا الجهاز فقط. تُحمّل بيانات الانتخابات العامة عبر HTTPS؛ لا تُرسل الإجابات أو التحليلات."), 14f, muted, top = 13)

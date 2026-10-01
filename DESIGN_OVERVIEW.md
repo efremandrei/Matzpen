@@ -1,6 +1,6 @@
 # Matzpen design overview
 
-Status: design direction, 1 October 2026. The 1.4.0 implementation clarifies the three theme controls and tightens screen copy alongside the branded splash, Star of David compass icon, questionnaire depths, and restrained motion. Independent editorial review remains future work.
+Status: design direction, 1 October 2026. The 1.5.0 implementation places the compact theme icons beside the language picker, enlarges the “Election Compass” brand, and gives the home screen a two-line invitation. It also includes the branded splash, Star of David compass icon, questionnaire depths, and restrained motion. Independent editorial review remains future work.
 
 ## Product promise
 
@@ -12,7 +12,7 @@ Help a voter understand where their policy views overlap with documented positio
 
 The welcome screen offers Quick (10), Balanced (14), and Full (18). The paths are nested so choosing a longer one keeps existing answers and adds four questions at a time. All scores use the answers saved across paths. More answers can reflect more of a voter's views, while documentation gaps still limit ranking. The interface describes this as comparison depth rather than a guarantee of accuracy.
 
-The header has three explicit, mutually exclusive choices. Sun selects the light palette, moon selects dark, and the Star of David selects a blue-and-white palette. The selected button stays highlighted and persists across launches. Blue is reserved for navigation and selection, never used to imply support for any list. Buttons and result cards use touch ripples; screen changes use a short fade and rise, disabled when Android's animation scale is zero.
+The header gives the larger app name its own row. A second compact row holds the language picker and three icon-only, mutually exclusive theme choices. Sun selects the light palette, moon selects dark, and the Star of David selects a blue-and-white palette. The selected icon has a subtle circular fill and persists across launches; accessible names describe every icon. Blue is reserved for navigation and selection, never used to imply support for any list. Buttons and result cards use touch ripples; screen changes use a short fade and rise, disabled when Android's animation scale is zero.
 
 Main-screen copy uses brief, separate statements and compact metadata. Complete questionnaire questions and source excerpts remain readable, with natural wrapping where their full wording needs more space.
 
