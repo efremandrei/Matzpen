@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.3.0 — 2026-10-01
+
+- Added a branded launch splash screen using Android's splash screen compatibility library.
+- Reworked the launcher and header mark into a blue compass ring around a white Star of David with a small central needle.
+- Kept package and signing continuity for an in-place update from 1.2.0.
+
 ## 1.2.0 — 2026-10-01
 
 - Added Quick (10), Balanced (14), and Full (18) questionnaire depths. Switching depth preserves answers and adds questions to the existing comparison.

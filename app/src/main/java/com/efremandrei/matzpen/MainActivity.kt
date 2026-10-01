@@ -28,6 +28,7 @@ import android.widget.ProgressBar
 import android.widget.ScrollView
 import android.widget.TextView
 import android.widget.Toast
+import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import org.json.JSONObject
 import kotlin.math.abs
 import kotlin.math.roundToInt
@@ -64,6 +65,7 @@ class MainActivity : Activity() {
     private val primaryText get() = if (israeli && !dark) Color.WHITE else Color.rgb(11, 20, 36)
 
     override fun onCreate(savedInstanceState: Bundle?) {
+        installSplashScreen()
         super.onCreate(savedInstanceState)
         lang = prefs.getString("language", "he") ?: "he"
         dark = prefs.getBoolean("dark", true)

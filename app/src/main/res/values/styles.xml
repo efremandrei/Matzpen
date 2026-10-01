@@ -4,4 +4,9 @@
         <item name="android:windowLightStatusBar">false</item>
         <item name="android:windowActionModeOverlay">true</item>
     </style>
+    <style name="Theme.Matzpen.Starting" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/ic_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_matzpen_foreground</item>
+        <item name="postSplashScreenTheme">@style/Theme.Matzpen</item>
+    </style>
 </resources>
