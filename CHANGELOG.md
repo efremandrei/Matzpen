@@ -1,5 +1,11 @@
 # Changelog
 
+## 1.7.0 — 2026-10-02
+
+- Added Russian to the in-app language selector and translated the home screen, questionnaire, results, list browser, details, dialogs, and About screen.
+- Added Russian wording for all 18 bundled questions and Russian names for all 38 submitted lists while retaining the original source links.
+- Applied left-to-right layout and search by Russian list name; saved answers, signing identity, and election scoring remain compatible with 1.6.1.
+
 ## 1.6.1 — 2026-10-01
 
 - Fixed a crash when launching directly from the installer’s Open button on devices that provide no splash icon view.

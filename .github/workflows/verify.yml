@@ -14,4 +14,5 @@ jobs:
           packages: platform-tools
       - run: sdkmanager 'platforms;android-35' 'build-tools;35.0.0'
       - run: bash ./gradlew testDebugUnitTest assembleDebug
+      - run: python3 scripts/validate_russian.py
       - run: openssl dgst -sha256 -verify feed-public.pem -signature docs/feed/manifest.sig docs/feed/manifest.json

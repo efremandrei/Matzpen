@@ -1,6 +1,6 @@
 # Matzpen design overview
 
-Status: design direction, 1 October 2026. The 1.6.1 implementation makes the compass splash and screen transitions easier to see. It retains the compact theme icons beside the language picker, larger “Election Compass” brand, two-line home invitation, and questionnaire depths. Independent editorial review remains future work.
+Status: design direction, 2 October 2026. The 1.7.0 implementation adds Russian to the existing interface languages. It retains the compass splash, compact theme icons beside the language picker, larger brand, two-line home invitation, and questionnaire depths. Independent editorial review remains future work.
 
 ## Product promise
 

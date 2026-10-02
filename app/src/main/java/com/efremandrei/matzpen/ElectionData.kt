@@ -4,15 +4,15 @@ import org.json.JSONObject
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
-data class Question(val id: String, val he: String, val en: String, val ar: String, val sourceUrl: String) {
-    fun text(lang: String) = when (lang) { "he" -> he; "ar" -> ar; else -> en }
+data class Question(val id: String, val he: String, val en: String, val ar: String, val sourceUrl: String, val ru: String? = null) {
+    fun text(lang: String) = when (lang) { "he" -> he; "ar" -> ar; "ru" -> ru ?: en; else -> en }
 }
 
 data class ElectionList(
     val id: String, val he: String, val en: String, val ballot: String,
-    val status: String, val sourceUrl: String
+    val status: String, val sourceUrl: String, val ru: String? = null
 ) {
-    fun name(lang: String) = if (lang == "he") he else en
+    fun name(lang: String) = when (lang) { "he" -> he; "ru" -> ru ?: en; else -> en }
 }
 
 data class Position(
@@ -31,14 +31,23 @@ data class ElectionData(
             val root = JSONObject(raw)
             require(root.getInt("schemaVersion") == 1)
             require(root.getString("electionId") == "il-knesset-26")
+            val snapshotHasRussian = root.getInt("revision") == 1 && root.getString("sourceVersion") == "2026-09-30"
             val questions = root.getJSONArray("questions").let { arr ->
                 (0 until arr.length()).map { i ->
-                    arr.getJSONObject(i).let { q -> Question(q.getString("id"), q.getString("he"), q.getString("en"), q.getString("ar"), q.getString("sourceUrl")) }
+                    arr.getJSONObject(i).let { q ->
+                        val id = q.getString("id")
+                        val ru = q.optString("ru").takeIf { it.isNotBlank() && it != "null" } ?: if (snapshotHasRussian) RussianText.questions[id] else null
+                        Question(id, q.getString("he"), q.getString("en"), q.getString("ar"), q.getString("sourceUrl"), ru)
+                    }
                 }
             }
             val lists = root.getJSONArray("lists").let { arr ->
                 (0 until arr.length()).map { i ->
-                    arr.getJSONObject(i).let { p -> ElectionList(p.getString("id"), p.getString("he"), p.getString("en"), p.getString("ballot"), p.getString("status"), p.getString("sourceUrl")) }
+                    arr.getJSONObject(i).let { p ->
+                        val id = p.getString("id")
+                        val ru = p.optString("ru").takeIf { it.isNotBlank() && it != "null" } ?: if (snapshotHasRussian) RussianText.lists[id] else null
+                        ElectionList(id, p.getString("he"), p.getString("en"), p.getString("ballot"), p.getString("status"), p.getString("sourceUrl"), ru)
+                    }
                 }
             }
             val positions = root.getJSONArray("positions").let { arr ->
