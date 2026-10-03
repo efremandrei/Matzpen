@@ -1,6 +1,6 @@
 # Matzpen design overview
 
-Status: design direction, 2 October 2026. The 1.7.0 implementation adds Russian to the existing interface languages. It retains the compass splash, compact theme icons beside the language picker, larger brand, two-line home invitation, and questionnaire depths. Independent editorial review remains future work.
+Status: design direction, 3 October 2026. Version 1.8.0 has four interface languages, a compass splash, compact theme icons, a larger brand, a two-line home invitation, and three questionnaire depths. The 50-question content and source-linked party summaries require independent editorial review before broad distribution.
 
 ## Product promise
 
@@ -10,7 +10,7 @@ Help a voter understand where their policy views overlap with documented positio
 
 ## Questionnaire depth and skin controls
 
-The welcome screen offers Quick (10), Balanced (14), and Full (18). The paths are nested so choosing a longer one keeps existing answers and adds four questions at a time. All scores use the answers saved across paths. More answers can reflect more of a voter's views, while documentation gaps still limit ranking. The interface describes this as comparison depth rather than a guarantee of accuracy.
+The welcome screen offers Quick (12), Balanced (25), and Full (50). The paths are nested so choosing a longer one keeps existing answers. All scores use the answers saved across paths. More answers can reflect more of a voter's views, while documentation gaps still limit ranking. The interface describes this as comparison depth rather than a guarantee of accuracy.
 
 The header gives the larger app name its own row. A second compact row holds the language picker and three icon-only, mutually exclusive theme choices. Sun selects the light palette, moon selects dark, and the Star of David selects a blue-and-white palette. The selected icon has a subtle circular fill and persists across launches; accessible names describe every icon. Blue is reserved for navigation and selection, never used to imply support for any list. Buttons and result cards use touch ripples; screen changes use a short fade and rise, disabled when Android's animation scale is zero.
 

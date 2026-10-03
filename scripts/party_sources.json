@@ -1,0 +1,270 @@
+{
+  "beyachad": {
+    "page": "https://elections.handled.team/parties/01-together-naftali/",
+    "sources": {
+      "ביטחון": "https://be-yahad.org.il/plans/natsec/",
+      "כלכלה ויוקר המחיה": "https://be-yahad.org.il/plans/yokermichya/",
+      "דיור": "https://be-yahad.org.il/plans/housing/",
+      "מערכת המשפט": "https://be-yahad.org.il/the-scroll/",
+      "דת ומדינה": "https://be-yahad.org.il/plans/religionandstate/",
+      "חינוך": "https://be-yahad.org.il/plans/education/",
+      "בריאות": "https://be-yahad.org.il/plans/health/",
+      "מדיניות חוץ": "https://be-yahad.org.il/plans/natsec/"
+    }
+  },
+  "yashar": {
+    "page": "https://elections.handled.team/parties/02-yashar-eisenkot/",
+    "sources": {
+      "ביטחון": "https://yasharwitheisenkot.com/agenda_point/",
+      "כלכלה ויוקר המחיה": "https://yasharwitheisenkot.com/agenda_point/",
+      "דיור": "https://yasharwitheisenkot.com/principles/economics/",
+      "מערכת המשפט": "https://yasharwitheisenkot.com/agenda_point/",
+      "דת ומדינה": "https://yasharwitheisenkot.com/agenda_point/",
+      "חינוך": "https://yasharwitheisenkot.com/agenda_point/",
+      "בריאות": "https://yasharwitheisenkot.com/principles/post-traumatic-stress-recovery/",
+      "מדיניות חוץ": "https://yasharwitheisenkot.com/agenda_point/"
+    }
+  },
+  "sharshar": {
+    "page": "https://elections.handled.team/parties/03-sharshar-love/",
+    "sources": {}
+  },
+  "shutafut": {
+    "page": "https://elections.handled.team/parties/04-partnership-all/",
+    "sources": {}
+  },
+  "pirates": {
+    "page": "https://elections.handled.team/parties/05-pirates-floating/",
+    "sources": {
+      "חינוך": "https://piratim.org/wiki/matza/",
+      "בריאות": "https://piratim.org/wiki/matza/",
+      "מדיניות חוץ": "https://piratim.org/wiki/matza/",
+      "שיטת ממשל": "https://piratim.org/wiki/matza/"
+    }
+  },
+  "amcha": {
+    "page": "https://elections.handled.team/parties/06-amcha-israel/",
+    "sources": {}
+  },
+  "haskel": {
+    "page": "https://elections.handled.team/parties/07-israel-first/",
+    "sources": {
+      "ביטחון": "https://israelfirst.co.il/work-plan/",
+      "כלכלה ויוקר המחיה": "https://israelfirst.co.il/work-plan/",
+      "חינוך": "https://israelfirst.co.il/work-plan/",
+      "מדיניות חוץ": "https://israelfirst.co.il/work-plan/",
+      "עמדה קואליציונית": "https://israelfirst.co.il/"
+    }
+  },
+  "ganeden": {
+    "page": "https://elections.handled.team/parties/08-garden-eden/",
+    "sources": {
+      "ביטחון": "https://www.ganeden.org.il/platform",
+      "כלכלה ויוקר המחיה": "https://www.ganeden.org.il/platform",
+      "דיור": "https://www.ganeden.org.il/platform",
+      "מערכת המשפט": "https://www.ganeden.org.il/platform",
+      "חינוך": "https://www.ganeden.org.il/platform",
+      "בריאות": "https://www.ganeden.org.il/platform",
+      "מדיניות חוץ": "https://www.ganeden.org.il/platform"
+    }
+  },
+  "kolhanashim": {
+    "page": "https://elections.handled.team/parties/09-women-s-voice/",
+    "sources": {}
+  },
+  "byn": {
+    "page": "https://elections.handled.team/parties/10-together-we-will/",
+    "sources": {
+      "ביטחון": "https://www.yahaad.com/",
+      "כלכלה ויוקר המחיה": "https://www.yahaad.com/",
+      "חינוך": "https://www.yahaad.com/general-5-1",
+      "מדיניות חוץ": "https://www.yahaad.com/"
+    }
+  },
+  "beytenu": {
+    "page": "https://elections.handled.team/parties/11-yisrael-beiteinu/",
+    "sources": {
+      "ביטחון": "https://beytenu.org.il/party-platform/",
+      "כלכלה ויוקר המחיה": "https://beytenu.org.il/party-platform/",
+      "דיור": "https://beytenu.org.il/party-platform/",
+      "מערכת המשפט": "https://beytenu.org.il/party-platform/",
+      "דת ומדינה": "https://beytenu.org.il/party-platform/",
+      "חינוך": "https://beytenu.org.il/party-platform/",
+      "בריאות": "https://beytenu.org.il/party-platform/",
+      "מדיניות חוץ": "https://beytenu.org.il/party-platform/",
+      "עמדה קואליציונית": "https://beytenu.org.il/party-platform/"
+    }
+  },
+  "mishpat": {
+    "page": "https://elections.handled.team/parties/12-mishpat-tzedek/",
+    "sources": {}
+  },
+  "shema": {
+    "page": "https://elections.handled.team/parties/13-shema-naftali/",
+    "sources": {
+      "ביטחון": "https://eomzone.com/%d7%97%d7%95%d7%a7-%d7%92%d7%99%d7%95%d7%a1-%d7%9e%d7%a4%d7%9c%d7%92%d7%aa-%d7%a9%d7%9e%d7%a2/",
+      "דיור": "https://eomzone.com/%d7%a1%d7%99%d7%95%d7%a2-%d7%9c%d7%a8%d7%9b%d7%99%d7%a9%d7%aa-%d7%93%d7%99%d7%a8%d7%95%d7%aa-%d7%9c%d7%91%d7%a0%d7%99-35-%d7%95%d7%9c%d7%9e%d7%98%d7%94/",
+      "מערכת המשפט": "https://eomzone.com/%d7%97%d7%95%d7%a7-%d7%94%d7%a1%d7%a8%d7%aa-%d7%9b%d7%9a-%d7%91%d7%92%d7%a5-%d7%9e%d7%a2%d7%9c-%d7%94%d7%9b%d7%a0%d7%a1%d7%aa/",
+      "דת ומדינה": "https://eomzone.com/%d7%9e%d7%a6%d7%a2/"
+    }
+  },
+  "otzma": {
+    "page": "https://elections.handled.team/parties/14-otzma-yehudit/",
+    "sources": {
+      "חינוך": "https://ozma-yeudit.co.il/%d7%9e%d7%99-%d7%90%d7%a0%d7%97%d7%a0%d7%95/",
+      "מדיניות חוץ": "https://ozma-yeudit.co.il/%d7%9e%d7%99-%d7%90%d7%a0%d7%97%d7%a0%d7%95/"
+    }
+  },
+  "seder": {
+    "page": "https://elections.handled.team/parties/15-new-order-establishing/",
+    "sources": {}
+  },
+  "miluim": {
+    "page": "https://elections.handled.team/parties/16-reservists/",
+    "sources": {}
+  },
+  "democrats": {
+    "page": "https://elections.handled.team/parties/17-democrats/",
+    "sources": {
+      "ביטחון": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "כלכלה ויוקר המחיה": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "דיור": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "מערכת המשפט": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "דת ומדינה": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "חינוך": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "בריאות": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "מדיניות חוץ": "https://democrats.org.il/wp-content/uploads/2026/04/vision0426.pdf",
+      "עמדה קואליציונית": "https://democrats.org.il/"
+    }
+  },
+  "raam": {
+    "page": "https://elections.handled.team/parties/18-ra-am-united/",
+    "sources": {}
+  },
+  "shas": {
+    "page": "https://elections.handled.team/parties/19-sephardic-torah-guardians/",
+    "sources": {}
+  },
+  "tzibur": {
+    "page": "https://elections.handled.team/parties/20-haredi-public/",
+    "sources": {
+      "ביטחון": "https://hatzibur-haharedi.org/מצע/שירות",
+      "כלכלה ויוקר המחיה": "https://hatzibur-haharedi.org/מצע/פרנסה",
+      "דיור": "https://hatzibur-haharedi.org/מצע/דיור",
+      "דת ומדינה": "https://hatzibur-haharedi.org/מצע/עולם-התורה",
+      "חינוך": "https://hatzibur-haharedi.org/מצע/חינוך"
+    }
+  },
+  "aniveata": {
+    "page": "https://elections.handled.team/parties/21-you-i/",
+    "sources": {}
+  },
+  "britolam": {
+    "page": "https://elections.handled.team/parties/22-brit-olam/",
+    "sources": {
+      "ביטחון": "https://brit-olam.net/עיקרי-המצע/",
+      "כלכלה ויוקר המחיה": "https://brit-olam.net/עיקרי-המצע/",
+      "מערכת המשפט": "https://brit-olam.net/עיקרי-המצע/",
+      "מדיניות חוץ": "https://brit-olam.net/עיקרי-המצע/"
+    }
+  },
+  "hatikun": {
+    "page": "https://elections.handled.team/parties/23-reform/",
+    "sources": {
+      "ביטחון": "https://hatikun.org.il/%d7%9e%d7%98%d7%a8%d7%95%d7%aa-%d7%94%d7%aa%d7%99%d7%a7%d7%95%d7%9f/",
+      "מערכת המשפט": "https://hatikun.org.il/%d7%9e%d7%98%d7%a8%d7%95%d7%aa-%d7%94%d7%aa%d7%99%d7%a7%d7%95%d7%9f/"
+    }
+  },
+  "gush": {
+    "page": "https://elections.handled.team/parties/24-gahat-biblical-bloc/",
+    "sources": {
+      "ביטחון": "https://www.ght.org.il/",
+      "כלכלה ויוקר המחיה": "https://www.ght.org.il/",
+      "בריאות": "https://www.ght.org.il/%d7%97%d7%99%d7%a1%d7%95%d7%a0%d7%99%d7%9d-%d7%91%d7%9b%d7%a4%d7%99%d7%99%d7%94/",
+      "מדיניות חוץ": "https://www.ght.org.il/"
+    }
+  },
+  "batach": {
+    "page": "https://elections.handled.team/parties/25-betach-social-security/",
+    "sources": {}
+  },
+  "orot": {
+    "page": "https://elections.handled.team/parties/26-orot-hashachar/",
+    "sources": {
+      "ביטחון": "https://orothashachar.org.il/",
+      "כלכלה ויוקר המחיה": "https://orothashachar.org.il/",
+      "דיור": "https://orothashachar.org.il/",
+      "דת ומדינה": "https://orothashachar.org.il/",
+      "חינוך": "https://orothashachar.org.il/",
+      "מדיניות חוץ": "https://orothashachar.org.il/",
+      "עמדה קואליציונית": "https://orothashachar.org.il/questions-and-answers/"
+    }
+  },
+  "bitachon": {
+    "page": "https://elections.handled.team/parties/27-personal-security/",
+    "sources": {}
+  },
+  "tzeva": {
+    "page": "https://elections.handled.team/parties/28-black-color-defender/",
+    "sources": {}
+  },
+  "likud": {
+    "page": "https://elections.handled.team/parties/29-likud/",
+    "sources": {}
+  },
+  "kachol": {
+    "page": "https://elections.handled.team/parties/30-blue-white/",
+    "sources": {
+      "ביטחון": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "כלכלה ויוקר המחיה": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "מערכת המשפט": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "דת ומדינה": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "חינוך": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "בריאות": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "מדיניות חוץ": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf",
+      "עמדה קואליציונית": "https://kachollavan.org.il/wp-content/uploads/2025/07/20527_3_A5_Hoveret_Ekronot_ONE_PAGE_A.pdf"
+    }
+  },
+  "rz": {
+    "page": "https://elections.handled.team/parties/31-religious-zionism/",
+    "sources": {}
+  },
+  "ahi": {
+    "page": "https://elections.handled.team/parties/32-achi-movement-movement/",
+    "sources": {}
+  },
+  "tzomet": {
+    "page": "https://elections.handled.team/parties/33-tzomet-beit-israel/",
+    "sources": {
+      "שירות לכול": "https://beit-israel.co.il/goals/",
+      "התיישבות ופיתוח": "https://beit-israel.co.il/goals/",
+      "עלייה וקליטה": "https://beit-israel.co.il/goals/",
+      "פנסיה": "https://beit-israel.co.il/goals/",
+      "ביטחון אישי": "https://beit-israel.co.il/goals/"
+    }
+  },
+  "tkuma": {
+    "page": "https://elections.handled.team/parties/34-tkuma/",
+    "sources": {}
+  },
+  "joint": {
+    "page": "https://elections.handled.team/parties/35-joint-list/",
+    "sources": {}
+  },
+  "hakahal": {
+    "page": "https://elections.handled.team/parties/36-hakhel-general-haredi/",
+    "sources": {}
+  },
+  "utj": {
+    "page": "https://elections.handled.team/parties/37-united-torah-judaism/",
+    "sources": {}
+  },
+  "noam": {
+    "page": "https://elections.handled.team/parties/38-noam-israel/",
+    "sources": {
+      "מערכת המשפט": "https://www.noamlisrael.org.il/",
+      "דת ומדינה": "https://www.noamlisrael.org.il/",
+      "חינוך": "https://www.noamlisrael.org.il/education-reform/"
+    }
+  }
+}

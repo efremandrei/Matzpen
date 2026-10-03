@@ -97,9 +97,10 @@ class MainActivity : Activity() {
         saved.keys().forEach { id ->
             val answer = saved.optJSONObject(id) ?: return@forEach
             val value = answer.optInt("value", 99)
-            if (value in -2..2) answers[id] = VoterAnswer(value, answer.optBoolean("priority"))
+            if (value in -2..2) answers[id] = VoterAnswer(when (value) { -1 -> -2; 1 -> 2; else -> value }, answer.optBoolean("priority"))
         }
         data = store.load()
+        if (answers.any { (id, answer) -> saved.optJSONObject(id)?.optInt("value") != answer.value }) saveAnswers()
         val storedDepth = prefs.getString("question_depth", null)
         depth = if (!QuestionPlan.supports(data)) QuestionDepth.FULL else
             QuestionDepth.fromId(storedDepth) ?: if (answers.isNotEmpty()) QuestionDepth.FULL else QuestionDepth.BALANCED
@@ -152,9 +153,9 @@ class MainActivity : Activity() {
         QuestionDepth.FULL -> tr("Full", "מלא", "كامل")
     }
     private fun depthDescription() = when (depth) {
-        QuestionDepth.QUICK -> tr("Broad overview · ~3 min", "מבט רחב · כ־3 דקות", "نظرة عامة · نحو 3 دقائق")
-        QuestionDepth.BALANCED -> tr("More detail · ~4 min", "יותר פירוט · כ־4 דקות", "تفاصيل أكثر · نحو 4 دقائق")
-        QuestionDepth.FULL -> tr("All issues · ~5 min", "כל הנושאים · כ־5 דקות", "كل المسائل · نحو 5 دقائق")
+        QuestionDepth.QUICK -> tr("Broad overview · ~4 min", "מבט רחב · כ־4 דקות", "نظرة عامة · نحو 4 دقائق", "Общий обзор · ~4 мин")
+        QuestionDepth.BALANCED -> tr("More detail · ~8 min", "יותר פירוט · כ־8 דקות", "تفاصيل أكثر · نحو 8 دقائق", "Подробнее · ~8 мин")
+        QuestionDepth.FULL -> tr("All 50 issues · ~16 min", "כל 50 הנושאים · כ־16 דקות", "كل المسائل الـ50 · نحو 16 دقيقة", "Все 50 вопросов · ~16 мин")
     }
     private fun saveAnswers() {
         val objectValue = JSONObject()
@@ -428,24 +429,23 @@ class MainActivity : Activity() {
         jump.setOnClickListener { showQuestionIndex() }
         card(body) { c ->
             addText(c, q.text(lang), 23f, foreground, true)
-            link(c, tr("Original issue and context", "הנושא וההסבר המקוריים", "السؤال الأصلي والسياق"), q.sourceUrl)
+            link(c, tr("Sources and context", "מקורות והקשר", "المصادر والسياق", "Источники и контекст"), q.sourceUrl)
         }
         addText(body, tr("Your view", "העמדה שלכם", "رأيك"), 19f, foreground, true, 22)
         addText(body, tr("How much do you agree?", "עד כמה אתם מסכימים?", "إلى أي مدى توافق؟"), 14f, muted, top = 4)
-        val labels = arrayOf(
-            tr("Strongly disagree", "מתנגדים מאוד", "أعارض بشدة"),
-            tr("Disagree", "מתנגדים", "أعارض"),
-            tr("Unsure / mixed", "לא בטוחים / מעורב", "غير متأكد / موقف مختلط"),
-            tr("Agree", "מסכימים", "أوافق"),
-            tr("Strongly agree", "מסכימים מאוד", "أوافق بشدة")
+        val labels = mapOf(
+            -2 to tr("Disagree", "מתנגדים", "أعارض", "Не согласен(на)"),
+            0 to tr("Mixed / depends", "תלוי בנסיבות / עמדה מעורבת", "موقف مختلط / يعتمد على الظروف", "Зависит от условий / смешанное мнение"),
+            2 to tr("Agree", "מסכימים", "أوافق", "Согласен(на)")
         )
-        for (value in -2..2) {
+        for (value in listOf(-2, 0, 2)) {
             val chosen = answers[q.id]?.value == value
-            addButton(body, (if (chosen) "✓  " else "") + labels[value + 2], chosen, 6) {
+            addButton(body, (if (chosen) "✓  " else "") + labels.getValue(value), chosen, 6) {
                 answers[q.id] = VoterAnswer(value, answers[q.id]?.priority ?: false)
                 saveAnswers(); show("question", true)
             }
         }
+        addText(body, tr("Not sure? Skip this question so it does not affect your match.", "לא בטוחים? דלגו על השאלה כדי שלא תשפיע על ההתאמה.", "غير متأكد؟ تخطَّ السؤال كي لا يؤثر في التوافق.", "Не уверены? Пропустите вопрос, чтобы он не влиял на результат."), 13f, muted, top = 8)
         val priority = CheckBox(this).apply {
             text = tr("Especially important to me · ${priorityCount()} / 3", "חשוב לי במיוחד · ${priorityCount()} / 3", "مهم جدًا بالنسبة لي · ${priorityCount()} / 3", "Особенно важно для меня · ${priorityCount()} / 3")
             setTextColor(this@MainActivity.foreground)
@@ -523,7 +523,7 @@ class MainActivity : Activity() {
             addButton(body, tr("Answer another question", "ענו על שאלה נוספת", "أجب عن سؤال آخر"), true) { goToQuestion(firstUnansweredIndex()) }
             return
         }
-        addText(body, tr("Scores use documented positions.", "הציונים מבוססים על עמדות מתועדות.", "تستند الدرجات إلى مواقف موثّقة."), 14f, muted, top = 12)
+        addText(body, tr("Scores use documented positions. Small lists are included regardless of electoral threshold.", "הציונים מבוססים על עמדות מתועדות. גם רשימות קטנות נכללות, ללא קשר לאחוז החסימה.", "تستند الدرجات إلى مواقف موثّقة. تشمل المقارنة القوائم الصغيرة بغض النظر عن نسبة الحسم.", "Оценки основаны на подтверждённых позициях. Малые списки включены независимо от избирательного барьера."), 14f, muted, top = 12)
         addText(body, tr("Alignment is not a voting recommendation.", "התאמה אינה המלצת הצבעה.", "التوافق ليس توصية بالتصويت."), 14f, muted, top = 3)
         val explainer = addText(body, tr("How matching works", "איך נקבעת ההתאמה", "كيف يُحسب التوافق"), 14f, accent, true, 9)
         explainer.minHeight = dp(48)
@@ -572,6 +572,7 @@ class MainActivity : Activity() {
             addText(c, (if (rank == null) "" else "$rank. ") + wrapped(result.list.name(lang)) + "  ·  " + wrapped(result.list.ballot), 18f, foreground, true)
             addText(c, if (scoreText == null) tr("Unranked", "ללא דירוג", "غير مرتبة") else tr("$scoreText alignment", "$scoreText התאמה", "توافق $scoreText", "Совпадение: $scoreText"), 17f, if (result.score == null) muted else accent, true, 6)
             addText(c, tr("Evidence coverage ${percent(result.coverage)}", "כיסוי ראיות ${percent(result.coverage)}", "تغطية الأدلة ${percent(result.coverage)}", "Охват источников: ${percent(result.coverage)}"), 13f, muted, top = 4)
+            addText(c, tr("${result.known} documented answers", "${result.known} תשובות עם עמדה מתועדת", "${result.known} إجابات لها موقف موثّق", "Подтверждено позиций: ${result.known}"), 12f, muted, top = 3)
             if (result.list.status == "court_review") addText(c, tr("Eligibility under court review", "כשירות בבדיקה משפטית", "الأهلية قيد المراجعة القضائية"), 13f, amber, top = 5)
             addText(c, tr("Compare positions  ›", "השוואת עמדות  ‹", "قارن المواقف  ‹"), 13f, accent, true, 8)
         }
@@ -591,9 +592,10 @@ class MainActivity : Activity() {
     private fun showMatchingExplanation() {
         AlertDialog.Builder(this).setTitle(tr("How matching works", "איך נקבעת ההתאמה", "كيف يُحسب التوافق"))
             .setMessage(tr(
-                "After 8 answers, each documented list position is compared with your answer. A priority counts twice. The percentage averages agreement only where a qualifying source exists. Lists need at least 70% weighted evidence coverage to be ranked; ties share a rank. Unknown positions are not disagreements. This is policy alignment, not a voting recommendation.",
-                "לאחר 8 תשובות, כל עמדה מתועדת של רשימה מושווית לתשובתכם. נושא חשוב מקבל משקל כפול. האחוז הוא ממוצע ההסכמה רק כאשר קיים מקור מתאים. לדירוג נדרש כיסוי ראיות משוקלל של 70% לפחות; ציונים זהים חולקים דירוג. עמדה לא ידועה אינה חוסר הסכמה. זו התאמה מדינית, לא המלצת הצבעה.",
-                "بعد 8 إجابات، يُقارَن كل موقف موثّق للقائمة بإجابتك. تُحتسب الأولوية بوزن مضاعف. النسبة هي متوسط التوافق فقط عند وجود مصدر مؤهل. يلزم توفر أدلة مرجّحة بنسبة 70٪ على الأقل للترتيب؛ والنتائج المتساوية تشترك في المرتبة. الموقف المجهول ليس اختلافًا. هذا توافق سياسي وليس توصية بالتصويت."
+                "After 8 answers, documented positions are compared with your answers. A priority counts twice. Ranking requires at least 8 documented positions and 70% evidence coverage for up to 25 answers, or 40% for more than 25 answers. Unknown positions are not disagreements. Small lists remain visible even without a rank. This is not a voting recommendation.",
+                "לאחר 8 תשובות משווים עמדות מתועדות לתשובותיכם. נושא חשוב נספר פעמיים. לדירוג נדרשות לפחות 8 עמדות מתועדות וכיסוי ראיות של 70% עד 25 תשובות, או 40% ביותר מ־25 תשובות. עמדה חסרה אינה חוסר הסכמה. גם רשימות קטנות מוצגות ללא דירוג. זו אינה המלצת הצבעה.",
+                "بعد 8 إجابات تُقارن المواقف الموثقة بإجاباتك. تُحتسب الأولوية مرتين. يتطلب الترتيب 8 مواقف موثقة على الأقل وتغطية أدلة 70٪ حتى 25 إجابة، أو 40٪ لأكثر من 25 إجابة. الموقف المجهول ليس خلافًا. تبقى القوائم الصغيرة مرئية دون ترتيب. هذه ليست توصية بالتصويت.",
+                "После 8 ответов ваши взгляды сравниваются с подтверждёнными позициями. Важная тема имеет двойной вес. Для рейтинга нужны минимум 8 подтверждённых позиций и охват 70% при не более 25 ответах либо 40% при большем числе. Неизвестная позиция не означает несогласие. Малые списки видны и без рейтинга. Это не рекомендация голосовать."
             )).setPositiveButton(tr("Done", "סיום", "تم"), null).show()
     }
 
@@ -665,6 +667,23 @@ class MainActivity : Activity() {
         addText(body, wrapped(list.name(lang)) + "  ·  " + wrapped(list.ballot), 27f, foreground, true, 12)
         addText(body, if (list.status == "court_review") tr("Eligibility under court review", "כשירות בבדיקה משפטית", "الأهلية قيد المراجعة القضائية") else tr("Committee approved list", "רשימה שאושרה בוועדה", "قائمة أقرّتها اللجنة"), 13f, if (list.status == "court_review") amber else muted, top = 7)
         link(body, tr("List profile and status", "פרופיל הרשימה ומעמדה", "ملف القائمة وحالتها"), list.sourceUrl)
+        addText(body, tr("Principles and proposals", "עקרונות והצעות", "المبادئ والمقترحات", "Принципы и предложения"), 20f, foreground, true, 20)
+        val profile = data.profiles[list.id]
+        if (list.id == "gush") addText(body, tr("Some linked statements date from 2021–2022; check whether they still reflect the list's current policy.", "חלק מההצהרות המקושרות הן משנים 2021–2022; כדאי לבדוק אם הן עדיין משקפות את עמדת הרשימה.", "بعض التصريحات المرتبطة تعود إلى 2021–2022؛ تحقق مما إذا كانت لا تزال تمثل موقف القائمة.", "Некоторые связанные заявления относятся к 2021–2022 годам; проверьте, отражают ли они нынешнюю позицию списка."), 13f, amber, top = 5)
+        if (profile != null && profile.bullets.isNotEmpty()) {
+            if (lang != "he") addText(body, tr("Platform summaries are shown in their original Hebrew. Each point links to the party source.", "תקצירי המצע בעברית עם קישור למקור הרשימה.", "تُعرض ملخصات البرنامج بالعبرية الأصلية، مع رابط لمصدر القائمة لكل نقطة.", "Краткое содержание программы дано на иврите; каждый пункт связан с источником партии."), 13f, muted, top = 5)
+            profile.bullets.forEach { bullet ->
+                card(body) { c ->
+                    addText(c, "• ${bullet.topic}", 15f, accent, true)
+                    addText(c, bullet.summaryHe, 15f, foreground, top = 5)
+                    link(c, tr("Official party source", "מקור רשמי של הרשימה", "مصدر القائمة الرسمي", "Официальный источник партии"), bullet.sourceUrl)
+                }
+            }
+        } else {
+            card(body) { c ->
+                addText(c, tr("No platform points were verified for this list in this snapshot. Its documented issue positions, if any, appear below.", "בגרסת המידע הזו לא אומתו נקודות מצע לרשימה. עמדות מתועדות בנושאים מסוימים, אם נמצאו, מופיעות בהמשך.", "لم تُتحقق نقاط برنامج لهذه القائمة في نسخة البيانات هذه. تظهر أدناه مواقف موثقة إن توفرت.", "В этой версии данных не подтверждены пункты программы списка. Подтверждённые позиции, если есть, показаны ниже."), 14f, muted)
+            }
+        }
         val result = ScoreEngine.results(data, answers).firstOrNull { it.list.id == list.id }
         if (result != null && answeredCount() >= 8) card(body) { c ->
             val scoreText = result.score?.let { wrapped("$it%") }
@@ -678,7 +697,7 @@ class MainActivity : Activity() {
             val unknown = answered.count { issueCategory(answers[it.id], data.positions[list.id to it.id]) == "unknown" }
             addText(body, tr("Where views meet or differ", "איפה העמדות דומות או שונות", "أين تتوافق الآراء أو تختلف"), 19f, foreground, true, 22)
             addText(body, tr("$aligned broadly aligned · $different different · $unknown without a documented position", "$aligned דומות בקירוב · $different שונות · $unknown ללא עמדה מתועדת", "$aligned متوافقة عمومًا · $different مختلفة · $unknown دون موقف موثّق", "Близких позиций: $aligned · различий: $different · без данных: $unknown"), 14f, muted, top = 7)
-            addText(body, tr("Broad alignment means the positions are at most one step apart on the answer scale.", "דמיון בקירוב פירושו פער של שלב אחד לכל היותר בסולם התשובות.", "التوافق العام يعني أن الفارق لا يزيد على درجة واحدة في سلّم الإجابات."), 12f, muted, top = 5)
+            addText(body, tr("Broad alignment means the answers are close on the three-choice scale.", "דמיון בקירוב פירושו שהתשובות קרובות בסולם של שלוש האפשרויות.", "التوافق العام يعني أن الإجابات متقاربة على مقياس الخيارات الثلاثة.", "Близость означает схожие ответы по трёхвариантной шкале."), 12f, muted, top = 5)
         } else addText(body, tr("Answer questions to compare your views with this list.", "ענו על שאלות כדי להשוות את עמדותיכם לרשימה.", "أجب عن الأسئلة لمقارنة آرائك بهذه القائمة."), 14f, muted, top = 18)
         val filters = LinearLayout(this).apply { orientation = LinearLayout.HORIZONTAL }
         body.addView(filters, LinearLayout.LayoutParams(-1, -2).apply { topMargin = dp(18) })
@@ -697,9 +716,9 @@ class MainActivity : Activity() {
                 val chip = button(label, detailFilter == id) { detailFilter = id; refresh() }.apply { textSize = 11f }
                 filters.addView(chip, LinearLayout.LayoutParams(0, dp(48), 1f).apply { marginEnd = dp(4) })
             }
-            val candidates = if (answered.isEmpty()) data.questions else answered
+            val candidates = if (answered.isEmpty()) data.questions.filter { data.positions.containsKey(list.id to it.id) } else answered
             val visible = candidates.filter { detailFilter == "all" || issueCategory(answers[it.id], data.positions[list.id to it.id]) == detailFilter }
-            if (visible.isEmpty()) card(items) { c -> addText(c, tr("No issues in this section.", "אין נושאים בחלק הזה.", "لا توجد مسائل في هذا القسم."), 15f) }
+            if (visible.isEmpty()) card(items) { c -> addText(c, tr("No documented positions in this section.", "אין עמדות מתועדות בחלק הזה.", "لا توجد مواقف موثّقة في هذا القسم.", "В этом разделе нет подтверждённых позиций."), 15f) }
             visible.forEach { q ->
                 val answer = answers[q.id]
                 val position = data.positions[list.id to q.id]
@@ -711,7 +730,7 @@ class MainActivity : Activity() {
                     addText(c, positionLabel(position?.value), 15f, if (position == null) muted else foreground, top = 3)
                     if (position != null) {
                         addText(c, tr("Source", "מקור", "المصدر"), 12f, muted, true, 12)
-                        addText(c, "${sourceType(position.sourceType)} · ${position.sourceDate}", 13f, muted, top = 3)
+                        addText(c, sourceType(position.sourceType) + position.sourceDate.takeIf { it.isNotBlank() }?.let { " · $it" }.orEmpty(), 13f, muted, top = 3)
                         val note = if (lang != "he" && position.sourceTitle.any { it in '\u0590'..'\u05FF' }) tr("Open original Hebrew source", "פתיחת המקור בעברית", "افتح المصدر العبري الأصلي") else tr("Open original source", "פתיחת המקור", "افتح المصدر الأصلي")
                         link(c, note, position.sourceUrl)
                         addText(c, position.sourceTitle, 12f, muted)
@@ -730,7 +749,7 @@ class MainActivity : Activity() {
         else -> tr("No qualifying source", "אין מקור מתאים", "لا يوجد مصدر مؤهل")
     }
     private fun sourceType(value: String) = when (value) {
-        "platform" -> tr("Platform", "מצע", "برنامج")
+        "platform", "official_platform" -> tr("Platform", "מצע", "برنامج", "Программа")
         "vote" -> tr("Vote", "הצבעה", "تصويت")
         "statement" -> tr("Statement", "הצהרה", "تصريح")
         else -> value
@@ -742,11 +761,9 @@ class MainActivity : Activity() {
         else -> "different"
     }
     private fun answerLabel(value: Int) = when (value) {
-        -2 -> tr("Strongly disagree", "מתנגדים מאוד", "أعارض بشدة")
-        -1 -> tr("Disagree", "מתנגדים", "أعارض")
-        0 -> tr("Unsure / mixed", "לא בטוחים / מעורב", "غير متأكد / موقف مختلط")
-        1 -> tr("Agree", "מסכימים", "أوافق")
-        else -> tr("Strongly agree", "מסכימים מאוד", "أوافق بشدة")
+        -2, -1 -> tr("Disagree", "מתנגדים", "أعارض", "Не согласен(на)")
+        0 -> tr("Mixed / depends", "תלוי בנסיבות / עמדה מעורבת", "موقف مختلط / يعتمد على الظروف", "Зависит от условий / смешанное мнение")
+        else -> tr("Agree", "מסכימים", "أوافق", "Согласен(на)")
     }
 
     private fun renderAbout() {
@@ -757,8 +774,9 @@ class MainActivity : Activity() {
         }
         card(body) { c ->
             addText(c, tr("Data and attribution", "מידע וקרדיט", "البيانات والنَسب"), 18f, foreground, true)
-            addText(c, tr("Adapted from מצפן הבחירה 2026, dataset ${data.sourceVersion}, CC BY 4.0. Its first 18 policy questions are used; two coalition-strategy questions and positions supported only by third-party reporting are excluded.", "עיבוד של נתוני מצפן הבחירה 2026, גרסה ${data.sourceVersion}, ברישיון CC BY 4.0. נכללו 18 שאלות המדיניות הראשונות; שתי שאלות על שותפות קואליציונית ועמדות המבוססות רק על דיווח צד שלישי הוחרגו.", "مقتبس من بيانات מצפן הבחירה 2026، إصدار ${data.sourceVersion}، بترخيص CC BY 4.0. استُخدمت أول 18 مسألة سياسة؛ واستُبعد سؤالان عن الائتلاف والمواقف المستندة فقط إلى تقارير طرف ثالث.", "Адаптировано из набора данных «מצפן הבחירה 2026», версия ${data.sourceVersion}, лицензия CC BY 4.0. Используются первые 18 вопросов о политике; два вопроса о коалиционной стратегии и позиции, основанные только на сообщениях третьих лиц, исключены."), 13f, muted, top = 8)
+            addText(c, tr("The first 18 issues and their documented positions are adapted from מצפן הבחירה 2026 (CC BY 4.0). Another 32 questions and party summaries are mapped to official party documents indexed by elections.handled.team. Unknown positions are not inferred. Snapshot ${data.sourceVersion}.", "18 השאלות הראשונות ועמדותיהן עובדו מנתוני מצפן הבחירה 2026 (CC BY 4.0). עוד 32 שאלות ותקצירי רשימות מופו למסמכים רשמיים שאונדקסו ב־elections.handled.team. עמדות חסרות לא הוסקו. גרסת מידע ${data.sourceVersion}.", "أول 18 مسألة ومواقفها مقتبسة من بيانات מצפן הבחירה 2026 (CC BY 4.0). أُضيف 32 سؤالًا وملخصات للقوائم اعتمادًا على وثائق رسمية مفهرسة في elections.handled.team. لم تُستنتج المواقف المجهولة. نسخة البيانات ${data.sourceVersion}.", "Первые 18 вопросов и позиции взяты из набора «מצפן הבחירה 2026» (CC BY 4.0). Ещё 32 вопроса и краткие сведения о списках сопоставлены с официальными документами, собранными elections.handled.team. Отсутствующие позиции не домысливались. Версия данных ${data.sourceVersion}."), 13f, muted, top = 8)
             link(c, "bhirot26.online", "https://bhirot26.online")
+            link(c, "elections.handled.team", "https://elections.handled.team/")
             link(c, tr("Open dataset", "מאגר הנתונים הפתוח", "البيانات المفتوحة"), "https://github.com/dangelm/bhirot26-election-data")
             link(c, "CC BY 4.0", "https://creativecommons.org/licenses/by/4.0/")
         }

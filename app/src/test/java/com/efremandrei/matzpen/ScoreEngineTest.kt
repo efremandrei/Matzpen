@@ -35,4 +35,15 @@ class ScoreEngineTest {
         assertEquals(88, ScoreEngine.results(data, ordinary).first { it.list.id == "a" }.score)
         assertEquals(78, ScoreEngine.results(data, prioritized).first { it.list.id == "a" }.score)
     }
+
+    @Test fun `long path still requires eight sourced positions`() {
+        val fifty = (1..50).map { Question("q$it", "", "", "", "https://example.org") }
+        val answers = (1..50).associate { "q$it" to VoterAnswer(2, false) }
+        val sparse = (1..7).associate { ("a" to "q$it") to Position("a", "q$it", 2, "platform", "", "", "https://example.org") }
+        val sufficient = (1..20).associate { ("b" to "q$it") to Position("b", "q$it", 2, "platform", "", "", "https://example.org") }
+        val data = ElectionData(2, "", "", fifty, lists, sparse + sufficient)
+        val results = ScoreEngine.results(data, answers)
+        assertNull(results.first { it.list.id == "a" }.score)
+        assertEquals(100, results.first { it.list.id == "b" }.score)
+    }
 }

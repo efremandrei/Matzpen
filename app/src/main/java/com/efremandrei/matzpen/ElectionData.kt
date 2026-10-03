@@ -21,17 +21,22 @@ data class Position(
     val sourceUrl: String
 )
 
+data class ProfileBullet(val topic: String, val summaryHe: String, val sourceUrl: String)
+data class PartyProfile(val listId: String, val sourceIndex: String, val bullets: List<ProfileBullet>)
+
 data class ElectionData(
     val revision: Int, val updatedAt: String, val sourceVersion: String,
     val questions: List<Question>, val lists: List<ElectionList>,
-    val positions: Map<Pair<String, String>, Position>
+    val positions: Map<Pair<String, String>, Position>,
+    val profiles: Map<String, PartyProfile> = emptyMap()
 ) {
     companion object {
         fun parse(raw: String): ElectionData {
             val root = JSONObject(raw)
             require(root.getInt("schemaVersion") == 1)
             require(root.getString("electionId") == "il-knesset-26")
-            val snapshotHasRussian = root.getInt("revision") == 1 && root.getString("sourceVersion") == "2026-09-30"
+            val snapshotHasRussian = (root.getInt("revision") == 1 && root.getString("sourceVersion") == "2026-09-30") ||
+                (root.getInt("revision") == 2 && root.getString("sourceVersion") == "2026-10-03-platform-review")
             val questions = root.getJSONArray("questions").let { arr ->
                 (0 until arr.length()).map { i ->
                     arr.getJSONObject(i).let { q ->
@@ -59,14 +64,31 @@ data class ElectionData(
                     ) }
                 }.associateBy { it.listId to it.questionId }
             }
-            require(questions.size == 18 && lists.size == 38)
-            require(questions.map { it.id }.distinct().size == 18)
+            val profiles = root.optJSONArray("profiles")?.let { arr ->
+                (0 until arr.length()).map { i ->
+                    arr.getJSONObject(i).let { profile ->
+                        val bullets = profile.getJSONArray("bullets").let { items ->
+                            (0 until items.length()).map { index ->
+                                items.getJSONObject(index).let { bullet -> ProfileBullet(
+                                    bullet.getString("topic"), bullet.getString("summary"), bullet.getString("sourceUrl")
+                                ) }
+                            }
+                        }
+                        PartyProfile(profile.getString("listId"), profile.getString("sourceIndex"), bullets)
+                    }
+                }.associateBy { it.listId }
+            } ?: emptyMap()
+            require(questions.size in setOf(18, 50) && lists.size == 38)
+            require(questions.map { it.id }.distinct().size == questions.size)
             require(lists.map { it.id }.distinct().size == 38)
             require(positions.values.all { it.value in -2..2 && it.sourceUrl.startsWith("https://") })
             val questionIds = questions.map { it.id }.toSet()
             val listIds = lists.map { it.id }.toSet()
             require(positions.values.all { it.questionId in questionIds && it.listId in listIds })
-            return ElectionData(root.getInt("revision"), root.getString("updatedAt"), root.getString("sourceVersion"), questions, lists, positions)
+            require(profiles.keys.all { it in listIds })
+            require(profiles.values.all { profile -> profile.sourceIndex.startsWith("https://") && profile.bullets.all { it.topic.isNotBlank() && it.summaryHe.isNotBlank() && it.sourceUrl.startsWith("https://") } })
+            if (questions.size == 50) require(profiles.size == lists.size)
+            return ElectionData(root.getInt("revision"), root.getString("updatedAt"), root.getString("sourceVersion"), questions, lists, positions, profiles)
         }
     }
 }
@@ -90,7 +112,8 @@ object ScoreEngine {
                 points += weight * (1.0 - abs(answer.value - position.value) / 4.0)
             }
             val coverage = if (totalWeight == 0) 0.0 else knownWeight.toDouble() / totalWeight
-            val score = if (valid.size >= 8 && coverage >= 0.7 && knownWeight > 0)
+            val minimumCoverage = if (valid.size > 25) 0.4 else 0.7
+            val score = if (valid.size >= 8 && known >= 8 && coverage >= minimumCoverage && knownWeight > 0)
                 (points / knownWeight * 100).roundToInt() else null
             MatchResult(list, score, coverage, known)
         }.sortedWith(compareBy<MatchResult> { it.score == null }.thenByDescending { it.score ?: -1 }.thenBy { it.list.he })

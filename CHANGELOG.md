@@ -1,5 +1,12 @@
 # Changelog
 
+## 1.8.0 — 2026-10-03
+
+- Expanded the nested questionnaire to 12, 25, or 50 questions, with three answer choices in Hebrew, English, Arabic, and Russian.
+- Added 98 source-linked platform summary points and 24 exact sourced position highlights across the 38 list profiles, including small lists; 12 profiles without verified points explicitly show the gap.
+- Added 32 sourced policy questions and 86 additional documented positions. Lists with sparse evidence remain visible without a ranked score; the long path requires at least eight sourced positions and 40% coverage.
+- Preserved stored answers, application ID, and signing identity for in-place upgrades; existing five-choice answers retain their direction on the new three-choice scale.
+
 ## 1.7.0 — 2026-10-02
 
 - Added Russian to the in-app language selector and translated the home screen, questionnaire, results, list browser, details, dialogs, and About screen.

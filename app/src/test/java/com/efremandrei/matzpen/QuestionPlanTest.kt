@@ -33,4 +33,19 @@ class QuestionPlanTest {
         assertFalse(QuestionPlan.supports(changed))
         assertEquals(changed.questions, QuestionPlan.questions(changed, QuestionDepth.QUICK))
     }
+
+    @Test fun `fifty-question plan is nested and includes small-party issues`() {
+        val added = """core-curriculum school-vouchers school-autonomy territorial-concessions teacher-pay early-childcare public-healthcare preventive-care trauma-care long-term-rent reservist-housing participatory-voting food-monopolies business-regulation torah-study-protection services-vat debt-relief basic-income fewer-ministries written-constitution judicial-independence override-clause local-shabbat civil-marriage pluralist-conversion jewish-identity-education service-alternatives professional-army voting-service arab-community-crime cancel-oslo west-bank-sovereignty""".split(" ")
+        val expanded = data.copy(questions = (ids + added).map { Question(it, "", "", "", "https://example.org") })
+        assertTrue(QuestionPlan.supports(expanded))
+        val quick = QuestionPlan.questions(expanded, QuestionDepth.QUICK).map { it.id }
+        val balanced = QuestionPlan.questions(expanded, QuestionDepth.BALANCED).map { it.id }
+        val full = QuestionPlan.questions(expanded, QuestionDepth.FULL).map { it.id }
+        assertEquals(12, quick.size)
+        assertEquals(25, balanced.size)
+        assertEquals(50, full.size)
+        assertEquals(quick, balanced.take(12))
+        assertEquals(balanced, full.take(25))
+        assertEquals((ids + added).toSet(), full.toSet())
+    }
 }

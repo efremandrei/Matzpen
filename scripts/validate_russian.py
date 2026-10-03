@@ -21,7 +21,9 @@ def mapping(name: str) -> set[str]:
     return set(keys)
 
 
-assert mapping("questions") == {item["id"] for item in content["questions"]}
+legacy_questions = mapping("questions")
+assert legacy_questions <= {item["id"] for item in content["questions"]}
+assert all(item["id"] in legacy_questions or re.search("[А-Яа-яЁё]", item.get("ru", "")) for item in content["questions"])
 assert mapping("lists") == {item["id"] for item in content["lists"]}
 ui_keys = mapping("uiStrings")
 
@@ -112,4 +114,4 @@ for match in re.finditer(r"\btr\(", ui_source):
         assert len(args) >= 4 or english[1:-1] in ui_keys, f"Missing Russian UI copy at line {line}: {english}"
     checked += 1
 
-print(f"Validated Russian copy for {checked} UI calls, 18 questions, and 38 lists")
+print(f"Validated Russian copy for {checked} UI calls, {len(content['questions'])} questions, and 38 lists")
